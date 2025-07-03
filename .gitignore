@@ -31,7 +31,7 @@ chat/.flutter-plugins
 chat/.flutter-plugins-dependencies
 chat/.pub-cache/
 chat/.pub/
-chat//build/
+chat/build/
 
 # Symbolication related
 chat/app.*.symbols
@@ -40,9 +40,9 @@ chat/app.*.symbols
 chat/app.*.map.json
 
 # Android Studio will place build artifacts here
-chat//android/app/debug
-chat//android/app/profile
-chat//android/app/release
+chat/android/app/debug
+chat/android/app/profile
+chat/android/app/release
 
 # Docker
 docker/.env
