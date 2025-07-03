@@ -1,0 +1,51 @@
+# Miscellaneous
+chat/*.class
+chat/*.log
+chat/*.pyc
+chat/*.swp
+chat/.DS_Store
+chat/.atom/
+chat/.build/
+chat/.buildlog/
+chat/.history
+chat/.svn/
+chat/.swiftpm/
+chat/migrate_working_dir/
+
+# IntelliJ related
+chat/*.iml
+chat/*.ipr
+chat/*.iws
+chat/.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+chat/**/doc/api/
+chat/**/ios/Flutter/.last_build_id
+chat/.dart_tool/
+chat/.flutter-plugins
+chat/.flutter-plugins-dependencies
+chat/.pub-cache/
+chat/.pub/
+chat//build/
+
+# Symbolication related
+chat/app.*.symbols
+
+# Obfuscation related
+chat/app.*.map.json
+
+# Android Studio will place build artifacts here
+chat//android/app/debug
+chat//android/app/profile
+chat//android/app/release
+
+# Docker
+docker/.env
+
+# Backend
+backend/socket/codebase/node_modules/
