@@ -128,25 +128,40 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             onTap: () async {
+              // final updatedMessages = await Navigator.push<List<Message>>(
+              //   context,
+              //   MaterialPageRoute(
+              //     builder: (context) => ChatPage(
+              //       chatName: chat.name,
+              //       initialMessages: List<Message>.from(chat.messages),
+              //     ),
+              //   ),
+              // );
+
+              // Mock read/unread messages
               final updatedMessages = await Navigator.push<List<Message>>(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatPage(
                     chatName: chat.name,
-                    initialMessages: List<Message>.from(chat.messages),
+                    initialMessages: List.generate(30, (index) {
+                      return Message(
+                        text: index < 20
+                            ? "Read message #$index"
+                            : "Unread message #$index",
+                        isMe: index < 20,
+                        time: DateTime.now().subtract(Duration(minutes: (30 - index) * 5)),
+                        isRead: index < 20,
+                      );
+                    }),
                   ),
                 ),
               );
 
-              print("updated msg");
-              print(updatedMessages);
-
               if (updatedMessages != null) {
                 _updateChatMessages(index, updatedMessages);
                 setState(() {
-                  print("Try set read msg");
                   for (var msg in chats[index].messages) {
-                    print(msg);
                     if (!msg.isMe) msg.isRead = true;
                   }
                 });

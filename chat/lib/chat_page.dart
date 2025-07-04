@@ -27,6 +27,26 @@ class _ChatPageState extends State<ChatPage> {
     _controller.addListener(() {
       setState(() {}); // Update send button enabled state
     });
+
+    // Wait for widgets to build, then scroll
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToFirstUnread();
+    });
+  }
+
+  void _scrollToFirstUnread() {
+    final index = messages.indexWhere((msg) => msg.isRead == false);
+
+    if (index != -1 && _scrollController.hasClients) {
+      double offset = index * 80.0; // approximate height per item
+      offset = (offset - 50).clamp(0.0, _scrollController.position.maxScrollExtent);
+
+      _scrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   void _sendMessage() {
