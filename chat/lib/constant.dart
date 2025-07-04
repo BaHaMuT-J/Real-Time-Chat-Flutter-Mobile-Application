@@ -16,7 +16,7 @@ class Message {
   final String text;
   final bool isMe;
   final DateTime time;
-  final bool isRead;
+  bool isRead;
 
   Message({
     required this.text,

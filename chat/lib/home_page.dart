@@ -35,7 +35,8 @@ class _HomePageState extends State<HomePage> {
       Message(
           text: "Meeting at 10?",
           isMe: false,
-          time: DateTime.now().subtract(const Duration(days: 1))),
+          time: DateTime.now().subtract(const Duration(days: 1)),
+          isRead: true),
       Message(
           text: "Yes, noted.",
           isMe: true,
@@ -82,6 +83,9 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           final chat = chats[index];
           final lastMsg = chat.messages.isNotEmpty ? chat.messages.last : null;
+          final unreadCount = chat.messages
+              .where((msg) => !msg.isMe && !msg.isRead)
+              .length;
           return ListTile(
             leading: CircleAvatar(child: Text(chat.name[0])),
             title: Text(
@@ -96,9 +100,32 @@ class _HomePageState extends State<HomePage> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            trailing: Text(
-              lastMsg != null ? formatTime(lastMsg.time) : "",
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  lastMsg != null ? formatTime(lastMsg.time) : "",
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                if (unreadCount > 0)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             onTap: () async {
               final updatedMessages = await Navigator.push<List<Message>>(
@@ -111,9 +138,20 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
 
+              print("updated msg");
+              print(updatedMessages);
+
               if (updatedMessages != null) {
                 _updateChatMessages(index, updatedMessages);
+                setState(() {
+                  print("Try set read msg");
+                  for (var msg in chats[index].messages) {
+                    print(msg);
+                    if (!msg.isMe) msg.isRead = true;
+                  }
+                });
               }
+
             },
           );
         },

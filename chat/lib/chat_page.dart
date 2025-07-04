@@ -58,78 +58,115 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: lightBlueGreenColor,
-      appBar: AppBar(
-        backgroundColor: lightBlueColor,
-        title: Row(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.pop(context, messages);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: lightBlueGreenColor,
+        appBar: AppBar(
+          backgroundColor: lightBlueColor,
+          title: Row(
+            children: [
+              Text(
+                widget.chatName,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w600,
+                  color: strongBlueColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        body: Column(
           children: [
-            Text(
-              widget.chatName,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w600,
-                color: strongBlueColor,
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  final msg = messages[index];
+
+                  // Find if this is the first unread message
+                  final isFirstUnread = (msg.isMe == false && msg.isRead == false &&
+                      (index == 0 || messages[index - 1].isRead == true));
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (isFirstUnread)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            children: const [
+                              Expanded(child: Divider()),
+                              SizedBox(width: 8),
+                              Text(
+                                "New Messages",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Expanded(child: Divider()),
+                            ],
+                          ),
+                        ),
+                      ChatBubble(message: msg),
+                    ],
+                  );
+                },
+              ),
+            ),
+            SafeArea(
+              child: Container(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: lightBlueColor,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          hintText: "Type a message...",
+                          hintStyle: TextStyle(
+                            color: strongBlueColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 14),
+                        ),
+                        onSubmitted: (_) => _sendMessage(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed:
+                      _controller.text.trim().isEmpty ? null : _sendMessage,
+                      child: const Icon(Icons.send),
+                      style: ElevatedButton.styleFrom(
+                        shape: const CircleBorder(),
+                        padding: const EdgeInsets.all(12),
+                        foregroundColor: Colors.blue
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final msg = messages[index];
-                return ChatBubble(message: msg);
-              },
-            ),
-          ),
-          SafeArea(
-            child: Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: lightBlueColor,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        hintText: "Type a message...",
-                        hintStyle: TextStyle(
-                          color: strongBlueColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 14),
-                      ),
-                      onSubmitted: (_) => _sendMessage(),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed:
-                    _controller.text.trim().isEmpty ? null : _sendMessage,
-                    child: const Icon(Icons.send),
-                    style: ElevatedButton.styleFrom(
-                      shape: const CircleBorder(),
-                      padding: const EdgeInsets.all(12),
-                      foregroundColor: Colors.blue
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
