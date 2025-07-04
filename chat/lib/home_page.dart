@@ -55,18 +55,42 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: lightBlueGreenColor,
       appBar: AppBar(
-        title: const Text("Chats"),
+        backgroundColor: lightBlueColor,
+        title: Row(
+          children: [
+            const Icon(Icons.chat),
+            const SizedBox(width: 12),
+            const Text(
+              "Item Tracker",
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w600,
+                color: strongBlueColor,
+              ),
+            ),
+          ],
+        ),
       ),
       body: ListView.separated(
         itemCount: chats.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, __) => const Divider(
+          thickness: 2,
+          color: strongBlueColor,
+        ),
         itemBuilder: (context, index) {
           final chat = chats[index];
           final lastMsg = chat.messages.isNotEmpty ? chat.messages.last : null;
           return ListTile(
             leading: CircleAvatar(child: Text(chat.name[0])),
-            title: Text(chat.name),
+            title: Text(
+              chat.name,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
             subtitle: Text(
               lastMsg?.text ?? "",
               maxLines: 1,

@@ -1,3 +1,10 @@
+import 'package:flutter/material.dart';
+
+const strongBlueColor = Color(0xFF003285);
+const weakBlueColor = Color(0xFF578FCA);
+const lightBlueColor = Color(0xFFA1E3F9);
+const lightBlueGreenColor = Color(0xFFD1F8EF);
+
 class Chat {
   final String name;
   final List<Message> messages;

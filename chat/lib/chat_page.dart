@@ -59,7 +59,22 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.chatName)),
+      backgroundColor: lightBlueGreenColor,
+      appBar: AppBar(
+        backgroundColor: lightBlueColor,
+        title: Row(
+          children: [
+            Text(
+              widget.chatName,
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w600,
+                color: strongBlueColor,
+              ),
+            ),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           Expanded(
@@ -77,7 +92,7 @@ class _ChatPageState extends State<ChatPage> {
             child: Container(
               padding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: Colors.grey[100],
+              color: lightBlueColor,
               child: Row(
                 children: [
                   Expanded(
@@ -86,6 +101,10 @@ class _ChatPageState extends State<ChatPage> {
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
                         hintText: "Type a message...",
+                        hintStyle: TextStyle(
+                          color: strongBlueColor,
+                          fontWeight: FontWeight.w500,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -132,7 +151,7 @@ class ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final align =
     message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final color = message.isMe ? Colors.blueAccent : Colors.grey[300];
+    final color = message.isMe ? Colors.blueAccent : Colors.white;
     final textColor = message.isMe ? Colors.white : Colors.black87;
     final radius = message.isMe
         ? const BorderRadius.only(
@@ -177,7 +196,7 @@ class ChatBubble extends StatelessWidget {
               if (message.isMe) ...[
                 const SizedBox(width: 4),
                 Icon(
-                  message.isRead ? Icons.done_all : Icons.check,
+                  message.isRead ? Icons.check : null,
                   size: 14,
                   color: message.isRead ? Colors.blue : Colors.grey,
                 ),
