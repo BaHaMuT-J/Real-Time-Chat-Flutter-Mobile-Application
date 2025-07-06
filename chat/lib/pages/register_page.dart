@@ -1,9 +1,85 @@
 import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  late final FirebaseAuth _auth = FirebaseAuth.instance;
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future<void> _handleRegister() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
+
+    final emailRegex = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+    final passwordRegex = RegExp(r'^[a-zA-Z0-9\-_]+$');
+
+    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    } else if (!emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    } else if (!passwordRegex.hasMatch(password)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Password can only contain letters, numbers, - or _')),
+      );
+      return;
+    } else if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords must be at least 6 characters')),
+      );
+      return;
+    } else if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
+    try {
+      await _auth.createUserWithEmailAndPassword(
+          email: email, password: password);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Register success. Please login')),
+      );
+    } catch (e) {
+      print(e);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Register fail. Please try again')),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +113,7 @@ class RegisterPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               TextField(
+                controller: emailController,
                 decoration: const InputDecoration(
                   filled: true,
                   fillColor: lightBlueGreenColor,
@@ -50,6 +127,7 @@ class RegisterPage extends StatelessWidget {
               const SizedBox(height: 16),
               TextField(
                 obscureText: true,
+                controller: passwordController,
                 decoration: const InputDecoration(
                   filled: true,
                   fillColor: lightBlueGreenColor,
@@ -64,6 +142,7 @@ class RegisterPage extends StatelessWidget {
               const SizedBox(height: 16),
               TextField(
                 obscureText: true,
+                controller: confirmPasswordController,
                 decoration: const InputDecoration(
                   filled: true,
                   fillColor: lightBlueGreenColor,
@@ -86,8 +165,8 @@ class RegisterPage extends StatelessWidget {
                     backgroundColor: strongBlueColor,
                     foregroundColor: Colors.white,
                   ),
-                  onPressed: () {
-                    // TODO: Handle register logic
+                  onPressed: () async {
+                    await _handleRegister();
                   },
                   child: const Text(
                     'Create New Account',

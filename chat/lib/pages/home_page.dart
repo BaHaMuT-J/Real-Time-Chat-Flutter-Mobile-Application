@@ -1,5 +1,8 @@
 import 'package:chat/pages/chat_page.dart';
 import 'package:chat/constant.dart';
+import 'package:chat/pages/login_page.dart';
+import 'package:chat/user.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -8,6 +11,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late final FirebaseAuth _auth = FirebaseAuth.instance;
   List<Chat> chats = [
     Chat(name: "Family Group", messages: [
       Message(
@@ -53,6 +57,22 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _handleLogOut() async {
+    await _auth.signOut();
+
+    await UserPrefs.logout();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Logout success')),
+    );
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,6 +93,14 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: strongBlueColor),
+            onPressed: () async {
+              await _handleLogOut();
+            },
+          ),
+        ],
       ),
       body: ListView.separated(
         itemCount: chats.length,
