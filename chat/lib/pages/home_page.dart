@@ -1,4 +1,4 @@
-import 'package:chat/chat_page.dart';
+import 'package:chat/pages/chat_page.dart';
 import 'package:chat/constant.dart';
 import 'package:flutter/material.dart';
 
@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
             const Icon(Icons.chat),
             const SizedBox(width: 12),
             const Text(
-              "Item Tracker",
+              "Chat",
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w600,
@@ -157,6 +157,9 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               );
+
+              print("Update Msg");
+              print(updatedMessages);
 
               if (updatedMessages != null) {
                 _updateChatMessages(index, updatedMessages);

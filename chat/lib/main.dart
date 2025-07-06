@@ -1,4 +1,6 @@
-import 'package:chat/home_page.dart';
+import 'package:chat/pages/home_page.dart';
+import 'package:chat/pages/login_page.dart';
+import 'package:chat/user.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const MyApp());
@@ -9,7 +11,40 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: HomePage(),
+      home: const InitialPage(),
+    );
+  }
+}
+
+class InitialPage extends StatelessWidget {
+  const InitialPage({super.key});
+
+  Future<Widget> decideStartPage() async {
+    final email = await UserPrefs.getEmail();
+    final password = await UserPrefs.getPassword();
+
+    if (email != null && password != null) {
+      return HomePage();
+    } else {
+      return const LoginPage();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Widget>(
+      future: decideStartPage(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (snapshot.hasData) {
+          return snapshot.data!;
+        } else {
+          return const LoginPage();
+        }
+      },
     );
   }
 }
