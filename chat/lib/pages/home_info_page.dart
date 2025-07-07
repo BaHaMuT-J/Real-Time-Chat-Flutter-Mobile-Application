@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:chat/pages/login_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:chat/constant.dart';
@@ -15,14 +16,16 @@ class HomeInfoPage extends StatefulWidget {
 
 class _HomeInfoPageState extends State<HomeInfoPage> {
   late final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool hasPendingNotifications = true; // for testing
+  late final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final List<String> friends = ["Alice", "Bob", "Charlie", "Diana"];
 
-  String? email;
-  String username = "Username";
-  String description = "No description yet.";
-  String? profileImagePath;
+  String email = '';
+  String username = '';
+  String? description;
+  String? profileImageUrl;
+  bool hasPendingNotifications = true; // for testing
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -31,16 +34,22 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   }
 
   Future<void> _loadProfile() async {
-    final userEmail = await UserPrefs.getEmail();
-    final userName = await UserPrefs.getUsername();
-    final userDesc = await UserPrefs.getDescription();
-    final imagePath = await UserPrefs.getProfileImage();
+    setState(() {
+      isLoading = true;
+    });
+
+    final doc = await _firestore
+        .collection('users')
+        .doc(_auth.currentUser!.uid)
+        .get();
+    final data = doc.data();
 
     setState(() {
-      email = userEmail;
-      username = userName ?? "Username";
-      description = userDesc ?? "No description yet.";
-      profileImagePath = imagePath;
+      email = data?['email'];
+      username = data?['username'] ?? data?['email'];
+      description = data?['description'] ?? "No description yet.";
+      profileImageUrl = data?['profileImageUrl'];
+      isLoading = false;
     });
   }
 
@@ -62,7 +71,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   Future<void> _editProfile() async {
     final nameController = TextEditingController(text: username);
     final descController = TextEditingController(text: description);
-    String? pickedImagePath = profileImagePath;
+    String? pickedImagePath = profileImageUrl;
 
     await showModalBottomSheet(
       context: context,
@@ -111,13 +120,25 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
-                  await UserPrefs.setProfile(
-                    nameController.text,
-                    descController.text,
-                    pickedImagePath,
-                  );
-                  Navigator.pop(context);
-                  _loadProfile();
+                  try {
+                    await _firestore
+                        .collection('users')
+                        .doc(_auth.currentUser!.uid)
+                        .set({
+                      'email': email,
+                      'username': nameController.text.trim(),
+                      'description': descController.text.trim(),
+                      'profileImageUrl': pickedImagePath,
+                    });
+                    Navigator.pop(context);
+                    _loadProfile();
+                  } catch (e) {
+                    debugPrint(e.toString());
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Update profile fail. Please try again')),
+                    );
+                  }
                 },
                 child: const Text("Save"),
               ),
@@ -293,6 +314,9 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return Scaffold(
       backgroundColor: lightBlueGreenColor,
       appBar: AppBar(
@@ -320,10 +344,10 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: profileImagePath != null
-                      ? FileImage(File(profileImagePath!))
+                  backgroundImage: profileImageUrl != null
+                      ? FileImage(File(profileImageUrl!))
                       : null,
-                  child: profileImagePath == null
+                  child: profileImageUrl == null
                       ? const Icon(Icons.person, size: 50)
                       : null,
                 ),
@@ -338,12 +362,12 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  email ?? "Loading...",
+                  email,
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  description,
+                  description ?? "No description yet",
                   style: const TextStyle(
                       fontSize: 14, fontStyle: FontStyle.italic),
                 ),

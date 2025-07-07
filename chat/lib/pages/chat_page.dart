@@ -6,10 +6,10 @@ class ChatPage extends StatefulWidget {
   final List<Message> initialMessages;
 
   const ChatPage({
-    Key? key,
+    super.key,
     required this.chatName,
     required this.initialMessages,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -174,12 +174,12 @@ class _ChatPageState extends State<ChatPage> {
                     ElevatedButton(
                       onPressed:
                       _controller.text.trim().isEmpty ? null : _sendMessage,
-                      child: const Icon(Icons.send),
                       style: ElevatedButton.styleFrom(
                         shape: const CircleBorder(),
                         padding: const EdgeInsets.all(12),
                         foregroundColor: Colors.blue
                       ),
+                      child: const Icon(Icons.send),
                     ),
                   ],
                 ),
@@ -202,7 +202,7 @@ class _ChatPageState extends State<ChatPage> {
 // Chat bubble widget
 class ChatBubble extends StatelessWidget {
   final Message message;
-  const ChatBubble({Key? key, required this.message}) : super(key: key);
+  const ChatBubble({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {

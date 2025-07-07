@@ -1,5 +1,6 @@
 import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -12,7 +13,9 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   late final FirebaseAuth _auth = FirebaseAuth.instance;
+  late final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final emailController = TextEditingController();
+  final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
@@ -23,10 +26,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _handleRegister() async {
     final email = emailController.text.trim();
+    final username = usernameController.text.trim();
     final password = passwordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
 
-    final emailRegex = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+    final emailRegex = RegExp(r"^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$");
     final passwordRegex = RegExp(r'^[a-zA-Z0-9\-_]+$');
 
     if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
@@ -60,12 +64,18 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      await _firestore.collection('users').doc(_auth.currentUser?.uid).set({
+        'email': email,
+        'username': username,
+      });
+      await _auth.signOut();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Register success. Please login')),
       );
     } catch (e) {
-      print(e);
+      debugPrint(e.toString());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Register fail. Please try again')),
@@ -127,6 +137,20 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               TextField(
                 obscureText: true,
+                controller: usernameController,
+                decoration: const InputDecoration(
+                  filled: true,
+                  fillColor: lightBlueGreenColor,
+                  hintText: 'Username',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                obscureText: true,
                 controller: passwordController,
                 decoration: const InputDecoration(
                   filled: true,
@@ -138,7 +162,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
               TextField(
                 obscureText: true,

@@ -1,5 +1,5 @@
 import 'package:chat/constant.dart';
-import 'package:chat/pages/chat_list_page.dart';
+import 'package:chat/pages/main_page.dart';
 import 'package:chat/pages/register_page.dart';
 import 'package:chat/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-    final emailRegex = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+    final emailRegex = RegExp(r"^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$");
     final passwordRegex = RegExp(r'^[a-zA-Z0-9\-_]+$');
 
     if (email.isEmpty || password.isEmpty) {
@@ -55,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
         const SnackBar(content: Text('Login success')),
       );
     } catch (e) {
-      print(e);
+      debugPrint(e.toString());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login fail. Please try again')),
@@ -68,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => ChatListPage()),
+      MaterialPageRoute(builder: (context) => const MainPage()),
     );
   }
 

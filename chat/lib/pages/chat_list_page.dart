@@ -184,8 +184,8 @@ class _ChatListPageState extends State<ChatListPage> {
                 ),
               );
 
-              print("Update Msg");
-              print(updatedMessages);
+              debugPrint("Update Msg");
+              debugPrint(updatedMessages.toString());
 
               if (updatedMessages != null) {
                 _updateChatMessages(index, updatedMessages);

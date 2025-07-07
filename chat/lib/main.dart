@@ -1,6 +1,7 @@
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/pages/main_page.dart';
 import 'package:chat/user.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -24,12 +25,20 @@ class MyApp extends StatelessWidget {
 class InitialPage extends StatelessWidget {
   const InitialPage({super.key});
 
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
+
   Future<Widget> decideStartPage() async {
     final email = await UserPrefs.getEmail();
     final password = await UserPrefs.getPassword();
 
     if (email != null && password != null) {
-      return const MainPage();
+      try {
+        await _auth.signInWithEmailAndPassword(email: email, password: password);
+        return const MainPage();
+      } on FirebaseAuthException catch (e) {
+        debugPrint('Login failed: ${e.message}');
+        return const LoginPage();
+      }
     } else {
       return const LoginPage();
     }
