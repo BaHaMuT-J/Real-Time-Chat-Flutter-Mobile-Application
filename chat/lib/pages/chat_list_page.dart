@@ -96,9 +96,7 @@ class _ChatListPageState extends State<ChatListPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: strongBlueColor),
-            onPressed: () async {
-              await _handleLogOut();
-            },
+            onPressed: _handleLogOut,
           ),
         ],
       ),
