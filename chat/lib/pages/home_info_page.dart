@@ -15,6 +15,7 @@ class HomeInfoPage extends StatefulWidget {
 
 class _HomeInfoPageState extends State<HomeInfoPage> {
   late final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool hasPendingNotifications = true; // for testing
 
   final List<String> friends = ["Alice", "Bob", "Charlie", "Diana"];
 
@@ -128,6 +129,168 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
     );
   }
 
+  Future<void> _addFriend() async {
+    final searchController = TextEditingController();
+    final dummyResults = ["Eve", "Frank", "Grace", "Heidi"];
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: lightBlueGreenColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 16,
+              right: 16,
+              top: 16
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  labelText: "Search user",
+                  labelStyle: const TextStyle(color: strongBlueColor),
+                  prefixIcon: const Icon(Icons.search, color: strongBlueColor),
+                  enabledBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: strongBlueColor),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: weakBlueColor, width: 2),
+                  ),
+                ),
+                style: const TextStyle(color: strongBlueColor),
+                cursorColor: strongBlueColor,
+              ),
+              const SizedBox(height: 16),
+              ...dummyResults.map((user) => Container(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: lightBlueColor.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: weakBlueColor,
+                    child: Icon(Icons.person, color: Colors.white),
+                  ),
+                  title: Text(user, style: const TextStyle(color: strongBlueColor)),
+                  trailing: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: strongBlueColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Friend request sent to $user'))
+                      );
+                    },
+                    child: const Text("Send Request"),
+                  ),
+                ),
+              )),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFriendRequests() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: lightBlueGreenColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Text(
+                "Friend Requests",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: strongBlueColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Sent",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: weakBlueColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...["Eve", "Frank"].map((name) => Container(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: lightBlueColor.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  leading: const Icon(Icons.hourglass_top, color: Colors.grey),
+                  title: Text(name, style: const TextStyle(color: strongBlueColor)),
+                  subtitle: const Text("Pending...", style: TextStyle(color: strongBlueColor)),
+                ),
+              )),
+              const SizedBox(height: 16),
+              Text(
+                "Received",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: weakBlueColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...["Grace", "Henry"].map((name) => Container(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: lightBlueColor.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  leading: const Icon(Icons.person_add, color: Colors.green),
+                  title: Text(name, style: const TextStyle(color: strongBlueColor)),
+                  subtitle: const Text("Wants to be your friend", style: TextStyle(color: strongBlueColor)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.check, color: Colors.green),
+                        onPressed: () {
+                          // acceptFriend(name);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        onPressed: () {
+                          // rejectFriend(name);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              )),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -197,13 +360,49 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            "Friends",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: strongBlueColor,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Friends",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: strongBlueColor,
+                ),
+              ),
+              Row(
+                children: [
+                  Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.email, color: strongBlueColor),
+                        onPressed: _showFriendRequests,
+                        tooltip: "Friend Requests",
+                      ),
+                      if (hasPendingNotifications)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  IconButton(
+                    onPressed: _addFriend,
+                    icon: const Icon(Icons.person_add, color: strongBlueColor),
+                    tooltip: "Add Friend",
+                  ),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           ...friends.map((friend) => ListTile(

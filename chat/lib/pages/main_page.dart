@@ -11,7 +11,7 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  int _selectedIndex = 1; // start at Chat List tab
+  int _selectedIndex = 0; // start at Chat List tab (Now Home for testing)
   final _pages = [
     HomeInfoPage(),
     ChatListPage(),
