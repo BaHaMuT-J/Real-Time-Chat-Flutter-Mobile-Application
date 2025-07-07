@@ -1,5 +1,5 @@
 import 'package:chat/constant.dart';
-import 'package:chat/pages/home_page.dart';
+import 'package:chat/pages/chat_list_page.dart';
 import 'package:chat/pages/register_page.dart';
 import 'package:chat/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -68,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => HomePage()),
+      MaterialPageRoute(builder: (context) => ChatListPage()),
     );
   }
 

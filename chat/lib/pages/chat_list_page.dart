@@ -5,12 +5,14 @@ import 'package:chat/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class HomePage extends StatefulWidget {
+class ChatListPage extends StatefulWidget {
+  const ChatListPage({super.key});
+
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<ChatListPage> createState() => _ChatListPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _ChatListPageState extends State<ChatListPage> {
   late final FirebaseAuth _auth = FirebaseAuth.instance;
   List<Chat> chats = [
     Chat(name: "Family Group", messages: [
@@ -81,8 +83,6 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: lightBlueColor,
         title: Row(
           children: [
-            const Icon(Icons.chat),
-            const SizedBox(width: 12),
             const Text(
               "Chat",
               style: TextStyle(
