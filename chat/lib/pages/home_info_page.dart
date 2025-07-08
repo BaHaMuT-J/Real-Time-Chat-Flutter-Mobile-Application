@@ -16,7 +16,7 @@ class HomeInfoPage extends StatefulWidget {
   State<HomeInfoPage> createState() => _HomeInfoPageState();
 }
 
-class _HomeInfoPageState extends State<HomeInfoPage> {
+class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
   late String _uid;
@@ -32,6 +32,27 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    startApp();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    debugPrint("AppLifecycleState changed to $state");
+    if (state == AppLifecycleState.paused) {
+      UserPrefs.saveIsLoad(false);
+    } else if (state == AppLifecycleState.resumed) {
+      startApp();
+    }
+  }
+
+  void startApp() {
     _uid = _auth.currentUser!.uid;
     debugPrint('UID: $_uid');
     _loadProfile();
@@ -40,45 +61,58 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   Future<void> _loadProfile() async {
     final usernamePref = await UserPrefs.getUsername();
-
-    if (usernamePref == null) {
-      final doc = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
-      final data = doc.data();
-      if (data != null) {
-        final loadedEmail = data['email'] ?? "";
-        final loadedUsername = data['username'] ?? loadedEmail;
-        final loadedDescription = data['description'] ?? "No description yet.";
-        final loadedProfileImageUrl = data['profileImageUrl'] ?? "";
-
-        setState(() {
-          email = loadedEmail;
-          username = loadedUsername;
-          description = loadedDescription;
-          profileImageUrl = loadedProfileImageUrl;
-        });
-
-        // Save to SharedPreferences for future use
-        await UserPrefs.saveUserProfile(
-          loadedUsername,
-          loadedDescription,
-          loadedProfileImageUrl,
-        );
-      }
-      return;
-    } else {
+    final isLoadPref = await UserPrefs.getIsLoad();
+    if (isLoadPref != null && isLoadPref) {
+      debugPrint('Load profile from Pref');
       final emailPref = await UserPrefs.getEmail();
       final descriptionPref = await UserPrefs.getDescription();
       final profileImageUrlPref = await UserPrefs.getProfileImageUrl();
       setState(() {
         email = emailPref!;
-        username = usernamePref;
+        username = usernamePref!;
         description = descriptionPref!;
         profileImageUrl = profileImageUrlPref!;
       });
+      return;
+    }
+
+    debugPrint('Load profile from Firestore');
+    final doc = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+    final data = doc.data();
+    if (data != null) {
+      final loadedEmail = data['email'] ?? "";
+      final loadedUsername = data['username'] ?? loadedEmail;
+      final loadedDescription = data['description'] ?? "No description yet.";
+      final loadedProfileImageUrl = data['profileImageUrl'] ?? "";
+
+      setState(() {
+        email = loadedEmail;
+        username = loadedUsername;
+        description = loadedDescription;
+        profileImageUrl = loadedProfileImageUrl;
+      });
+      UserPrefs.saveUserProfile(
+        loadedUsername,
+        loadedDescription,
+        loadedProfileImageUrl,
+      );
+      UserPrefs.saveIsLoad(true);
     }
   }
 
   Future<void> _loadFriends() async {
+    final friendsListRef = await UserPrefs.getFriendsList();
+    final isLoadPref = await UserPrefs.getIsLoad();
+    if (isLoadPref != null && isLoadPref) {
+      debugPrint('Load friends from Pref');
+      debugPrint('friendsList: $friendsListRef');
+      setState(() {
+        friends = friendsListRef;
+      });
+      return;
+    }
+
+    debugPrint('Load friends from Firestore');
     final friendsSnapshot = await _firestore
         .collection('users')
         .doc(_uid)
@@ -95,14 +129,17 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
     final friendUsers = friendUserSnapshots.map((docSnapshot) {
       final data = docSnapshot.data() as Map<String, dynamic>;
-      return UserModel.fromFirestore(data);
+      final uid = docSnapshot.id;
+      data['uid'] = uid;
+      return UserModel.fromJson(data);
     }).toList();
 
-    debugPrint('friendUsers: $friendUsers');
-
+    debugPrint('friendsList: $friendUsers');
     setState(() {
       friends = friendUsers;
     });
+    UserPrefs.saveFriendsList(friendUsers);
+    UserPrefs.saveIsLoad(true);
   }
 
   Future<void> _handleLogOut() async {
