@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 const strongBlueColor = Color(0xFF003285);
@@ -24,6 +25,31 @@ class Message {
     required this.time,
     this.isRead = false,
   });
+}
+
+class UserModel {
+  final String username;
+  final String description;
+  final String profileImageUrl;
+
+  UserModel({
+    required this.username,
+    required this.description,
+    required this.profileImageUrl,
+  });
+
+  @override
+  String toString() {
+    return 'UserModel(username: $username, description: $description, profileImageUrl: $profileImageUrl)';
+  }
+
+  factory UserModel.fromFirestore(Map<String, dynamic> data) {
+    return UserModel(
+      username: data['username'],
+      description: data['description'] ?? "No description yet.",
+      profileImageUrl: data['profileImageUrl'] ?? "",
+    );
+  }
 }
 
 String formatTime(DateTime time) {

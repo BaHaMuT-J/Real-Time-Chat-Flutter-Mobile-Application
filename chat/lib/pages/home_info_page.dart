@@ -19,7 +19,7 @@ class HomeInfoPage extends StatefulWidget {
 class _HomeInfoPageState extends State<HomeInfoPage> {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
-  final friends = ["Alice", "Bob", "Charlie", "Diana"];
+  late String _uid;
 
   String email = '';
   String username = '';
@@ -27,9 +27,13 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   String profileImageUrl = '';
   bool hasPendingNotifications = true;
 
+  List<UserModel> friends = [];
+
   @override
   void initState() {
     super.initState();
+    _uid = _auth.currentUser!.uid;
+    debugPrint('UID: $_uid');
     _loadProfile();
     _loadFriends();
   }
@@ -75,7 +79,30 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   }
 
   Future<void> _loadFriends() async {
-    // Load friend list from firestore
+    final friendsSnapshot = await _firestore
+        .collection('users')
+        .doc(_uid)
+        .collection('friends')
+        .get();
+
+    final List<DocumentReference> friendRefs = friendsSnapshot.docs.map((doc) {
+      return doc['friend'] as DocumentReference;
+    }).toList();
+
+    final friendUserSnapshots = await Future.wait(
+        friendRefs.map((ref) => ref.get())
+    );
+
+    final friendUsers = friendUserSnapshots.map((docSnapshot) {
+      final data = docSnapshot.data() as Map<String, dynamic>;
+      return UserModel.fromFirestore(data);
+    }).toList();
+
+    debugPrint('friendUsers: $friendUsers');
+
+    setState(() {
+      friends = friendUsers;
+    });
   }
 
   Future<void> _handleLogOut() async {
@@ -185,7 +212,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
         actions: [IconButton(icon: const Icon(Icons.logout, color: strongBlueColor), onPressed: _handleLogOut)],
       ),
       body: email.isEmpty
-        ? const Center(child: CircularProgressIndicator())
+        ? _loading()
         : ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -193,7 +220,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
             const SizedBox(height: 24),
             _friendsSection(),
             const SizedBox(height: 12),
-            FriendsList(friends: friends),
+            friends.isNotEmpty ? FriendsList(friends: friends) : _loading(),
           ],
       ),
     );
@@ -289,4 +316,5 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   Widget _sectionTitle(String title) => Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: strongBlueColor));
   Widget _subTitle(String subtitle) => Text(subtitle, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: weakBlueColor));
+  Widget _loading() => const Center(child: CircularProgressIndicator());
 }

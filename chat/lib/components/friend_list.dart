@@ -1,7 +1,10 @@
+import 'dart:io';
+
+import 'package:chat/constant.dart';
 import 'package:flutter/material.dart';
 
 class FriendsList extends StatelessWidget {
-  final List<String> friends;
+  final List<UserModel> friends;
 
   const FriendsList({super.key, required this.friends});
 
@@ -9,8 +12,13 @@ class FriendsList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: friends.map((friend) => ListTile(
-        leading: const CircleAvatar(child: Icon(Icons.person)),
-        title: Text(friend),
+        leading: CircleAvatar(
+          backgroundImage: friend.profileImageUrl.isNotEmpty ? FileImage(File(friend.profileImageUrl)) : null,
+          child: friend.profileImageUrl.isEmpty ? const Icon(Icons.person) : null,
+        ),
+        title: Text(
+          friend.username
+        ),
       )).toList(),
     );
   }
