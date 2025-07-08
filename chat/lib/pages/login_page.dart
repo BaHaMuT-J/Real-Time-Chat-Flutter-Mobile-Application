@@ -63,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    await UserPrefs.saveUser(email, password);
+    await UserPrefs.saveCredential(email, password);
 
     if (!mounted) return;
     Navigator.pushReplacement(
