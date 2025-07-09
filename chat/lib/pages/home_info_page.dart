@@ -1,9 +1,8 @@
 import 'dart:io';
-import 'package:chat/components/action_tile.dart';
 import 'package:chat/components/add_friend_sheet.dart';
 import 'package:chat/components/edit_profile_sheet.dart';
 import 'package:chat/components/friend_list.dart';
-import 'package:chat/components/status_tile.dart';
+import 'package:chat/components/friend_request_sheet.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/services/firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -165,51 +164,32 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
       context: context,
       backgroundColor: lightBlueGreenColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(shrinkWrap: true, children: [
-          _sectionTitle("Friend Requests"),
-          const SizedBox(height: 16),
-          _subTitle("Sent"),
-          ...(sentFriendRequests != null
-            ? sentFriendRequests!.isNotEmpty
-              ? sentFriendRequests!
-                .map((request) => StatusTile(
-                  request: request,
-                  onCancel: () async {
-                    await _firestoreService.cancelSentRequest(request.user.uid);
-                    _loadSentFriendRequests(isPreferPref: false);
-                  },
-                  onClose: () async {
-                    await _firestoreService.closeSentRequest(request.user.uid);
-                    _loadSentFriendRequests(isPreferPref: false);
-                  },
-                )).toList()
-              : [Text("You have no sent friend request", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: strongBlueColor))]
-            : [_loading()]
-          ),
-          const SizedBox(height: 16),
-          _subTitle("Received"),
-          ...(receivedFriendRequests != null
-            ? receivedFriendRequests!.isNotEmpty
-              ? receivedFriendRequests!
-                .map((user) => ActionTile(
-                  user: user,
-                  onApprove: () async {
-                    await _firestoreService.acceptFriendRequest(user.uid);
-                    _loadReceivedFriendRequests(isPreferPref: false);
-                    _loadFriends(isPreferPref: false);
-                  },
-                  onReject: () async {
-                    await _firestoreService.rejectFriendRequest(user.uid);
-                    _loadReceivedFriendRequests(isPreferPref: false);
-                  },
-                ))
-                .toList()
-              : [Text("You have no received friend request", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: strongBlueColor))]
-            : [_loading()]
-          ),
-        ]),
+      builder: (_) => StatefulBuilder(
+        builder: (context, setModalState) => FriendRequestsSheet(
+          sentRequests: sentFriendRequests,
+          receivedRequests: receivedFriendRequests,
+          onCancelSent: (uid) async {
+            await _firestoreService.cancelSentRequest(uid);
+            await _loadSentFriendRequests(isPreferPref: false);
+            setModalState(() {});
+          },
+          onCloseSent: (uid) async {
+            await _firestoreService.closeSentRequest(uid);
+            await _loadSentFriendRequests(isPreferPref: false);
+            setModalState(() {});
+          },
+          onApproveReceived: (uid) async {
+            await _firestoreService.acceptFriendRequest(uid);
+            await _loadReceivedFriendRequests(isPreferPref: false);
+            await _loadFriends(isPreferPref: false);
+            setModalState(() {});
+          },
+          onRejectReceived: (uid) async {
+            await _firestoreService.rejectFriendRequest(uid);
+            await _loadReceivedFriendRequests(isPreferPref: false);
+            setModalState(() {});
+          },
+        ),
       ),
     );
   }
@@ -281,7 +261,5 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
     ],
   );
 
-  Widget _sectionTitle(String title) => Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: strongBlueColor));
-  Widget _subTitle(String subtitle) => Text(subtitle, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: weakBlueColor));
   Widget _loading() => const Center(child: CircularProgressIndicator());
 }

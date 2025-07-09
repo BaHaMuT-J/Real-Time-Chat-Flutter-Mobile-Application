@@ -1,3 +1,4 @@
+import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/constant.dart';
 import 'package:flutter/material.dart';
 
@@ -17,12 +18,23 @@ class StatusTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
-        leading: switch (request.status) {
-          'Pending...' => const Icon(Icons.hourglass_top, color: Colors.grey),
-          'Accepted'   => const Icon(Icons.check_circle, color: Colors.green),
-          'Rejected'   => const Icon(Icons.cancel, color: Colors.red),
-          _            => const Icon(Icons.help_outline),
-        },
+        leading: SizedBox(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              switch (request.status) {
+                'Pending...' => const Icon(Icons.hourglass_top, color: Colors.grey),
+                'Accepted'   => const Icon(Icons.check_circle, color: Colors.green),
+                'Rejected'   => const Icon(Icons.cancel, color: Colors.red),
+                _            => const Icon(Icons.help_outline),
+              },
+              const SizedBox(width: 8),
+              ProfileAvatar(
+                imagePath: request.user.profileImageUrl,
+              ),
+            ],
+          ),
+        ),
         title: Text(
           request.user.username,
           style: const TextStyle(color: strongBlueColor),

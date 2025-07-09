@@ -1,3 +1,4 @@
+import 'package:chat/components/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:chat/constant.dart';
 import 'package:chat/services/firestore.dart';
@@ -57,7 +58,9 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                         children: users.map((user) {
                           final isSent = localSentRequests.contains(user.uid);
                           return ListTile(
-                            leading: CircleAvatar(child: Text(user.username[0])),
+                            leading: ProfileAvatar(
+                              imagePath: user.profileImageUrl,
+                            ),
                             title: Text(user.username, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: strongBlueColor)),
                             subtitle: Text(user.description, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: weakBlueColor)),
                             trailing: isSent
