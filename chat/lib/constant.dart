@@ -1,10 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 const strongBlueColor = Color(0xFF003285);
 const weakBlueColor = Color(0xFF578FCA);
 const lightBlueColor = Color(0xFFA1E3F9);
 const lightBlueGreenColor = Color(0xFFD1F8EF);
+
+String formatTime(DateTime time) {
+  final now = DateTime.now();
+  if (now.difference(time).inDays == 0) {
+    return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+  } else {
+    return "${time.month}/${time.day}";
+  }
+}
 
 class Chat {
   final String name;
@@ -42,7 +50,7 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid,username: $username, description: $description, profileImageUrl: $profileImageUrl)';
+    return 'UserModel(uid: $uid, username: $username, description: $description, profileImageUrl: $profileImageUrl)';
   }
 
   factory UserModel.fromJson(Map<String, dynamic> data) {
@@ -64,11 +72,17 @@ class UserModel {
   }
 }
 
-String formatTime(DateTime time) {
-  final now = DateTime.now();
-  if (now.difference(time).inDays == 0) {
-    return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
-  } else {
-    return "${time.month}/${time.day}";
+class SentFriendRequest {
+  final UserModel user;
+  final String status;
+
+  SentFriendRequest({
+    required this.user,
+    required this.status
+  });
+
+  @override
+  String toString() {
+    return 'UserModel(user: $user, status: $status)';
   }
 }

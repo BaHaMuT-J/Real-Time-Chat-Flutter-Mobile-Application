@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:chat/components/action_tile.dart';
 import 'package:chat/components/edit_profile_sheet.dart';
 import 'package:chat/components/friend_list.dart';
+import 'package:chat/components/status_tile.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/services/firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -24,9 +26,11 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
   String username = '';
   String description = '';
   String profileImageUrl = '';
-  bool hasPendingNotifications = true;
+  bool hasPendingNotifications = true; // Not implement yet
 
-  List<UserModel> friends = [];
+  List<UserModel>? friends;
+  List<SentFriendRequest>? sentFriendRequests;
+  List<UserModel>? receivedFriendRequests;
 
   @override
   void initState() {
@@ -54,6 +58,8 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
   void startApp() {
     _loadProfile();
     _loadFriends();
+    _loadSentFriendRequests();
+    _loadReceivedFriendRequests();
   }
 
   Future<void> _loadProfile() async {
@@ -72,6 +78,20 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
     final friendUsers = await _firestoreService.loadFriends();
     setState(() {
       friends = friendUsers;
+    });
+  }
+
+  Future<void> _loadSentFriendRequests() async {
+    final allSentFriendRequests = await _firestoreService.getAllSentFriendRequest();
+    setState(() {
+      sentFriendRequests = allSentFriendRequests;
+    });
+  }
+
+  Future<void> _loadReceivedFriendRequests() async {
+    final allReceivedFriendRequests = await _firestoreService.getAllReceivedFriendRequest();
+    setState(() {
+      receivedFriendRequests = allReceivedFriendRequests;
     });
   }
 
@@ -146,9 +166,6 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
   }
 
   void _showFriendRequests() {
-    final sent = ["Eve", "Frank"];
-    final received = ["Grace", "Henry"];
-
     showModalBottomSheet(
       context: context,
       backgroundColor: lightBlueGreenColor,
@@ -157,11 +174,33 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
         padding: const EdgeInsets.all(16),
         child: ListView(shrinkWrap: true, children: [
           _sectionTitle("Friend Requests"),
+          const SizedBox(height: 16),
           _subTitle("Sent"),
-          ...sent.map((name) => _statusTile(name, "Pending...", Icons.hourglass_top)),
+          ...(sentFriendRequests != null
+            ? sentFriendRequests!.isNotEmpty
+              ? sentFriendRequests!
+                .map((request) => StatusTile(
+                  request: request,
+                  onCancel: () async {},
+                  onClose: () async {},
+                )).toList()
+              : [Text("You have no sent friend request", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: strongBlueColor))]
+            : [_loading()]
+          ),
           const SizedBox(height: 16),
           _subTitle("Received"),
-          ...received.map((name) => _actionTile(name)),
+          ...(receivedFriendRequests != null
+            ? receivedFriendRequests!.isNotEmpty
+              ? receivedFriendRequests!
+                .map((user) => ActionTile(
+                  user: user,
+                  onApprove: () async {},
+                  onReject: () async {},
+                ))
+                .toList()
+              : [Text("You have no received friend request", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: strongBlueColor))]
+            : [_loading()]
+          ),
         ]),
       ),
     );
@@ -185,7 +224,13 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
             const SizedBox(height: 24),
             _friendsSection(),
             const SizedBox(height: 12),
-            friends.isNotEmpty ? FriendsList(friends: friends) : _loading(),
+            friends != null
+                ? friends!.isNotEmpty
+                  ? FriendsList(friends: friends!)
+                  : Center(
+                      child: Text("You have no friend yet", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: strongBlueColor))
+                    )
+                : _loading(),
           ],
       ),
     );
@@ -252,30 +297,6 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
         onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Friend request sent to $user'))),
         child: const Text("Send Request"),
       ),
-    ),
-  );
-
-  Widget _statusTile(String name, String subtitle, IconData icon) => Container(
-    margin: const EdgeInsets.symmetric(vertical: 4),
-    decoration: BoxDecoration(color: lightBlueColor.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(8)),
-    child: ListTile(
-      leading: Icon(icon, color: Colors.grey),
-      title: Text(name, style: const TextStyle(color: strongBlueColor)),
-      subtitle: Text(subtitle, style: const TextStyle(color: strongBlueColor)),
-    ),
-  );
-
-  Widget _actionTile(String name) => Container(
-    margin: const EdgeInsets.symmetric(vertical: 4),
-    decoration: BoxDecoration(color: lightBlueColor.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(8)),
-    child: ListTile(
-      leading: const Icon(Icons.person_add, color: Colors.green),
-      title: Text(name, style: const TextStyle(color: strongBlueColor)),
-      subtitle: const Text("Wants to be your friend", style: TextStyle(color: strongBlueColor)),
-      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-        IconButton(icon: const Icon(Icons.check, color: Colors.green), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.close, color: Colors.red), onPressed: () {}),
-      ]),
     ),
   );
 

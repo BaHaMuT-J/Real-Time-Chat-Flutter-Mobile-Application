@@ -105,7 +105,7 @@ class FirestoreService {
     return friendUsers;
   }
 
-  Future<List<Map<String, dynamic>>> getAllSentFriendRequest() async {
+  Future<List<SentFriendRequest>> getAllSentFriendRequest() async {
     final uid = _auth.currentUser!.uid;
     final snapshot = await _firestore
         .collection('users')
@@ -113,7 +113,7 @@ class FirestoreService {
         .collection('sent_friend_requests')
         .get();
 
-    final List<Map<String, dynamic>> requests = [];
+    final List<SentFriendRequest> requests = [];
 
     for (var doc in snapshot.docs) {
       final data = doc.data();
@@ -125,17 +125,14 @@ class FirestoreService {
       userData['uid'] = userSnap.id;
       final userModel = UserModel.fromJson(userData);
 
-      requests.add({
-        'user': userModel,
-        'status': data['status'],
-      });
+      requests.add(SentFriendRequest(user: userModel, status: data['status']));
     }
 
     debugPrint('Sent friend requests (resolved): $requests');
     return requests;
   }
 
-  Future<List<Map<String, dynamic>>> getAllReceivedFriendRequest() async {
+  Future<List<UserModel>> getAllReceivedFriendRequest() async {
     final uid = _auth.currentUser!.uid;
     final snapshot = await _firestore
         .collection('users')
@@ -143,7 +140,7 @@ class FirestoreService {
         .collection('received_friend_requests')
         .get();
 
-    final List<Map<String, dynamic>> requests = [];
+    final List<UserModel> requests = [];
 
     for (var doc in snapshot.docs) {
       final data = doc.data();
@@ -154,10 +151,7 @@ class FirestoreService {
       userData['uid'] = userSnap.id;
       final userModel = UserModel.fromJson(userData);
 
-      requests.add({
-        'user': userModel,
-        'status': data['status'],
-      });
+      requests.add(userModel);
     }
 
     debugPrint('Received friend requests (resolved): $requests');
@@ -177,7 +171,7 @@ class FirestoreService {
         .doc(receiverUid)
         .set({
           'user': receiverUserRef,
-          'status': 'pending',
+          'status': 'Pending...',
         });
 
     debugPrint('Create sent request in $currentUid');
