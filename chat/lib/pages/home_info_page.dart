@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:chat/components/edit_profile_sheet.dart';
 import 'package:chat/components/friend_list.dart';
 import 'package:chat/pages/login_page.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chat/services/firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:chat/constant.dart';
@@ -18,8 +18,7 @@ class HomeInfoPage extends StatefulWidget {
 
 class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver {
   final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance;
-  late String _uid;
+  final FirestoreService _firestoreService = FirestoreService();
 
   String email = '';
   String username = '';
@@ -53,93 +52,27 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
   }
 
   void startApp() {
-    _uid = _auth.currentUser!.uid;
-    debugPrint('UID: $_uid');
     _loadProfile();
     _loadFriends();
   }
 
   Future<void> _loadProfile() async {
-    final usernamePref = await UserPrefs.getUsername();
-    final isLoadPref = await UserPrefs.getIsLoad();
-    if (isLoadPref != null && isLoadPref) {
-      debugPrint('Load profile from Pref');
-      final emailPref = await UserPrefs.getEmail();
-      final descriptionPref = await UserPrefs.getDescription();
-      final profileImageUrlPref = await UserPrefs.getProfileImageUrl();
-      setState(() {
-        email = emailPref!;
-        username = usernamePref!;
-        description = descriptionPref!;
-        profileImageUrl = profileImageUrlPref!;
-      });
-      return;
-    }
-
-    debugPrint('Load profile from Firestore');
-    final doc = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
-    final data = doc.data();
+    final data = await _firestoreService.loadProfile();
     if (data != null) {
-      final loadedEmail = data['email'] ?? "";
-      final loadedUsername = data['username'] ?? loadedEmail;
-      final loadedDescription = data['description'] ?? "No description yet.";
-      final loadedProfileImageUrl = data['profileImageUrl'] ?? "";
-
       setState(() {
-        email = loadedEmail;
-        username = loadedUsername;
-        description = loadedDescription;
-        profileImageUrl = loadedProfileImageUrl;
+        email = data['email'];
+        username = data['username'];
+        description = data['description'];
+        profileImageUrl = data['profileImageUrl'];
       });
-      UserPrefs.saveUserProfile(
-        loadedUsername,
-        loadedDescription,
-        loadedProfileImageUrl,
-      );
-      UserPrefs.saveIsLoad(true);
     }
   }
 
   Future<void> _loadFriends() async {
-    final friendsListRef = await UserPrefs.getFriendsList();
-    final isLoadPref = await UserPrefs.getIsLoad();
-    if (isLoadPref != null && isLoadPref) {
-      debugPrint('Load friends from Pref');
-      debugPrint('friendsList: $friendsListRef');
-      setState(() {
-        friends = friendsListRef;
-      });
-      return;
-    }
-
-    debugPrint('Load friends from Firestore');
-    final friendsSnapshot = await _firestore
-        .collection('users')
-        .doc(_uid)
-        .collection('friends')
-        .get();
-
-    final List<DocumentReference> friendRefs = friendsSnapshot.docs.map((doc) {
-      return doc['friend'] as DocumentReference;
-    }).toList();
-
-    final friendUserSnapshots = await Future.wait(
-        friendRefs.map((ref) => ref.get())
-    );
-
-    final friendUsers = friendUserSnapshots.map((docSnapshot) {
-      final data = docSnapshot.data() as Map<String, dynamic>;
-      final uid = docSnapshot.id;
-      data['uid'] = uid;
-      return UserModel.fromJson(data);
-    }).toList();
-
-    debugPrint('friendsList: $friendUsers');
+    final friendUsers = await _firestoreService.loadFriends();
     setState(() {
       friends = friendUsers;
     });
-    UserPrefs.saveFriendsList(friendUsers);
-    UserPrefs.saveIsLoad(true);
   }
 
   Future<void> _handleLogOut() async {
@@ -174,17 +107,12 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
         onSave: () async {
           final newUsername = nameController.text.trim();
           final newDescription = descController.text.trim();
-          final newProfileImageUrl = pickedImagePath;
-          await _firestore.collection('users').doc(_auth.currentUser!.uid).set({
-            'email': email,
-            'username': newUsername,
-            'description': newDescription,
-            'profileImageUrl': newProfileImageUrl,
-          });
-          await UserPrefs.saveUserProfile(
-            newUsername,
-            newDescription,
-            newProfileImageUrl ?? '',
+          final newProfileImageUrl = pickedImagePath ?? '';
+          await _firestoreService.updateProfile(
+            email: email,
+            username: newUsername,
+            description: newDescription,
+            profileImageUrl: newProfileImageUrl,
           );
           Navigator.pop(context);
           _loadProfile();
