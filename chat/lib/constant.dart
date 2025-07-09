@@ -78,11 +78,25 @@ class SentFriendRequest {
 
   SentFriendRequest({
     required this.user,
-    required this.status
+    required this.status,
   });
 
   @override
   String toString() {
-    return 'UserModel(user: $user, status: $status)';
+    return 'SentFriendRequest(user: $user, status: $status)';
+  }
+
+  factory SentFriendRequest.fromJson(Map<String, dynamic> data) {
+    return SentFriendRequest(
+      user: UserModel.fromJson(data['user']),
+      status: data['status'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'user': user.toJson(),
+      'status': status,
+    };
   }
 }

@@ -54,7 +54,6 @@ class FirestoreService {
         loadedDescription,
         loadedProfileImageUrl,
       );
-      UserPrefs.saveIsLoad(true);
 
       return {
         'email': loadedEmail,
@@ -99,13 +98,22 @@ class FirestoreService {
     }).toList();
 
     UserPrefs.saveFriendsList(friendUsers);
-    UserPrefs.saveIsLoad(true);
 
     debugPrint('$friendUsers');
     return friendUsers;
   }
 
   Future<List<SentFriendRequest>> getAllSentFriendRequest() async {
+    final sentFriendRequestsListRef = await UserPrefs.getSentFriendRequests();
+    final isLoadPref = await UserPrefs.getIsLoad();
+    if (isLoadPref != null && isLoadPref) {
+      debugPrint('Load sent requests from Pref');
+      debugPrint('Sent friend requests (resolved): $sentFriendRequestsListRef');
+      return sentFriendRequestsListRef;
+    }
+
+    debugPrint('Load sent requests from Firestore');
+
     final uid = _auth.currentUser!.uid;
     final snapshot = await _firestore
         .collection('users')
@@ -119,7 +127,6 @@ class FirestoreService {
       final data = doc.data();
       final DocumentReference userRef = data['user'];
 
-      // Get user data
       final userSnap = await userRef.get();
       final userData = userSnap.data() as Map<String, dynamic>;
       userData['uid'] = userSnap.id;
@@ -128,11 +135,22 @@ class FirestoreService {
       requests.add(SentFriendRequest(user: userModel, status: data['status']));
     }
 
+    UserPrefs.saveSentFriendRequests(requests);
     debugPrint('Sent friend requests (resolved): $requests');
     return requests;
   }
 
   Future<List<UserModel>> getAllReceivedFriendRequest() async {
+    final receivedFriendRequestsListRef = await UserPrefs.getReceivedFriendRequests();
+    final isLoadPref = await UserPrefs.getIsLoad();
+    if (isLoadPref != null && isLoadPref) {
+      debugPrint('Load received requests from Pref');
+      debugPrint('Received friend requests (resolved): $receivedFriendRequestsListRef');
+      return receivedFriendRequestsListRef;
+    }
+
+    debugPrint('Load received requests from Firestore');
+
     final uid = _auth.currentUser!.uid;
     final snapshot = await _firestore
         .collection('users')
@@ -154,6 +172,7 @@ class FirestoreService {
       requests.add(userModel);
     }
 
+    UserPrefs.saveReceivedFriendRequests(requests);
     debugPrint('Received friend requests (resolved): $requests');
     return requests;
   }

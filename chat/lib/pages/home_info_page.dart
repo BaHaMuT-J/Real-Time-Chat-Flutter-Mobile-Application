@@ -56,10 +56,14 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
   }
 
   void startApp() {
-    _loadProfile();
-    _loadFriends();
-    _loadSentFriendRequests();
-    _loadReceivedFriendRequests();
+    Future.wait([
+      _loadProfile(),
+      _loadFriends(),
+      _loadSentFriendRequests(),
+      _loadReceivedFriendRequests(),
+    ]).then((_) {
+      UserPrefs.saveIsLoad(true);
+    });
   }
 
   Future<void> _loadProfile() async {

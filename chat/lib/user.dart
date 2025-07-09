@@ -65,6 +65,38 @@ class UserPrefs {
         .toList();
   }
 
+  static Future<void> saveSentFriendRequests(List<SentFriendRequest> requests) async {
+    final prefs = await UserPrefs._getPrefs();
+    List<String> requestJsonList = requests.map((request) => jsonEncode(request.toJson())).toList();
+    await prefs.setStringList('sentRequestsList', requestJsonList);
+  }
+
+  static Future<List<SentFriendRequest>> getSentFriendRequests() async {
+    final prefs = await UserPrefs._getPrefs();
+    List<String>? request = prefs.getStringList('sentRequestsList');
+    if (request == null) return [];
+
+    return request
+        .map((requestJson) => SentFriendRequest.fromJson(jsonDecode(requestJson)))
+        .toList();
+  }
+
+  static Future<void> saveReceivedFriendRequests(List<UserModel> users) async {
+    final prefs = await UserPrefs._getPrefs();
+    List<String> userJsonList = users.map((user) => jsonEncode(user.toJson())).toList();
+    await prefs.setStringList('receivedRequestsList', userJsonList);
+  }
+
+  static Future<List<UserModel>> getReceivedFriendRequests() async {
+    final prefs = await UserPrefs._getPrefs();
+    List<String>? userJsonList = prefs.getStringList('receivedRequestsList');
+    if (userJsonList == null) return [];
+
+    return userJsonList
+        .map((userJson) => UserModel.fromJson(jsonDecode(userJson)))
+        .toList();
+  }
+
   static Future<void> saveIsLoad(bool isLoad) async {
     final prefs = await UserPrefs._getPrefs();
     await prefs.setBool('isLoad', isLoad);
