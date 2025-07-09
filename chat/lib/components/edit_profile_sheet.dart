@@ -35,10 +35,10 @@ class EditProfileSheet extends StatelessWidget {
             },
             child: CircleAvatar(
               radius: 40,
-              backgroundImage: pickedImagePath != null
+              backgroundImage: pickedImagePath != null && pickedImagePath!.isNotEmpty
                   ? FileImage(File(pickedImagePath!))
                   : null,
-              child: pickedImagePath == null
+              child: pickedImagePath == null || pickedImagePath!.isEmpty
                   ? const Icon(Icons.add_a_photo, size: 30)
                   : null,
             ),

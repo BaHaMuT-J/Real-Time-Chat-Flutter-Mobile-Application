@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:chat/components/action_tile.dart';
-import 'package:chat/components/status_tile.dart';
+import 'package:chat/components/received_request_tile.dart';
+import 'package:chat/components/sent_request_tile.dart';
 import 'package:chat/constant.dart';
 
 class FriendRequestsSheet extends StatelessWidget {
@@ -33,7 +33,7 @@ class FriendRequestsSheet extends StatelessWidget {
           _subTitle("Sent"),
           ...(sentRequests != null
               ? sentRequests!.isNotEmpty
-              ? sentRequests!.map((request) => StatusTile(
+              ? sentRequests!.map((request) => SentFriendRequestTile(
             request: request,
             onCancel: () async {
               await onCancelSent(request.user.uid);
@@ -55,7 +55,7 @@ class FriendRequestsSheet extends StatelessWidget {
           _subTitle("Received"),
           ...(receivedRequests != null
               ? receivedRequests!.isNotEmpty
-              ? receivedRequests!.map((user) => ActionTile(
+              ? receivedRequests!.map((user) => ReceivedFriendRequestTile(
             user: user,
             onApprove: () async {
               await onApproveReceived(user.uid);

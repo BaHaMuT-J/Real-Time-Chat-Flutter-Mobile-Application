@@ -15,6 +15,7 @@ class AddFriendSheet extends StatefulWidget {
 class _AddFriendSheetState extends State<AddFriendSheet> {
   final TextEditingController searchController = TextEditingController();
   final ValueNotifier<List<UserModel>> searchResults = ValueNotifier([]);
+  Set<String> loadingRequests = {};
   Set<String> localSentRequests = {};
   bool isLoading = false;
 
@@ -64,24 +65,36 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                             title: Text(user.username, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: strongBlueColor)),
                             subtitle: Text(user.description, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: weakBlueColor)),
                             trailing: isSent
-                                ? Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              child: Text("Sent", style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
-                            )
+                              ? Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                child: Text(
+                                  "Sent",
+                                  style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                                ),
+                              )
+                              : loadingRequests.contains(user.uid)
+                                ? const SizedBox(
+                                  width: 24, height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
                                 : IconButton(
-                              icon: const Icon(Icons.person_add, color: strongBlueColor),
-                              onPressed: () async {
-                                await FirestoreService().sendFriendRequest(user.uid);
-                                setState(() {
-                                  localSentRequests.add(user.uid);
-                                });
-                                widget.onRequestSent();
-                              },
-                            ),
+                                  icon: const Icon(Icons.person_add, color: strongBlueColor),
+                                  onPressed: () async {
+                                    setState(() {
+                                      loadingRequests.add(user.uid);
+                                    });
+                                    await FirestoreService().sendFriendRequest(user.uid);
+                                    setState(() {
+                                      localSentRequests.add(user.uid);
+                                      loadingRequests.remove(user.uid);
+                                    });
+                                    widget.onRequestSent();
+                                  },
+                                ),
                           );
                         }).toList(),
-                      )
-                          : const Text("No users found.", style: TextStyle(color: strongBlueColor, fontSize: 16, fontWeight: FontWeight.w600));
+                        )
+                        : const Text("No users found.", style: TextStyle(color: strongBlueColor, fontSize: 16, fontWeight: FontWeight.w600));
                     },
                   ),
               ],
@@ -116,4 +129,3 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
         cursorColor: strongBlueColor,
       );
 }
-

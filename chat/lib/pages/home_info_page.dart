@@ -68,49 +68,91 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
     });
   }
 
-  Future<void> _loadProfile({ bool isPreferPref = true}) async {
-    final data = await _firestoreService.loadProfile(isPreferPref: isPreferPref);
-    if (data != null) {
-      setState(() {
-        email = data['email'];
-        username = data['username'];
-        description = data['description'];
-        profileImageUrl = data['profileImageUrl'];
-      });
+  Future<void> _loadProfile({bool isPreferPref = true}) async {
+    try {
+      final data = await _firestoreService.loadProfile(isPreferPref: isPreferPref);
+      if (data != null) {
+        setState(() {
+          email = data['email'];
+          username = data['username'];
+          description = data['description'];
+          profileImageUrl = data['profileImageUrl'];
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load profile: $e')),
+        );
+      }
     }
   }
 
-  Future<void> _loadFriends({ bool isPreferPref = true}) async {
-    final friendUsers = await _firestoreService.loadFriends(isPreferPref: isPreferPref);
-    setState(() {
-      friends = friendUsers;
-    });
+  Future<void> _loadFriends({bool isPreferPref = true}) async {
+    try {
+      final friendUsers = await _firestoreService.loadFriends(isPreferPref: isPreferPref);
+      setState(() {
+        friends = friendUsers;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load friends: $e')),
+        );
+      }
+    }
   }
 
-  Future<void> _loadSentFriendRequests({ bool isPreferPref = true}) async {
-    final allSentFriendRequests = await _firestoreService.getAllSentFriendRequest(isPreferPref: isPreferPref);
-    setState(() {
-      sentFriendRequests = allSentFriendRequests;
-    });
+  Future<void> _loadSentFriendRequests({bool isPreferPref = true}) async {
+    try {
+      final allSentFriendRequests = await _firestoreService.getAllSentFriendRequest(isPreferPref: isPreferPref);
+      setState(() {
+        sentFriendRequests = allSentFriendRequests;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load sent friend requests: $e')),
+        );
+      }
+    }
   }
 
-  Future<void> _loadReceivedFriendRequests({ bool isPreferPref = true}) async {
-    final allReceivedFriendRequests = await _firestoreService.getAllReceivedFriendRequest(isPreferPref: isPreferPref);
-    setState(() {
-      receivedFriendRequests = allReceivedFriendRequests;
-    });
+  Future<void> _loadReceivedFriendRequests({bool isPreferPref = true}) async {
+    try {
+      final allReceivedFriendRequests = await _firestoreService.getAllReceivedFriendRequest(isPreferPref: isPreferPref);
+      setState(() {
+        receivedFriendRequests = allReceivedFriendRequests;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load received friend requests: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _handleLogOut() async {
-    await _auth.signOut();
-    await UserPrefs.logout();
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-          (_) => false,
-    );
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logout success')));
+    try {
+      await _auth.signOut();
+      await UserPrefs.logout();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+            (_) => false,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Logout success')),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Logout failed: $e')),
+        );
+      }
+    }
   }
 
   void _editProfileSheet() async {
@@ -216,16 +258,24 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
                 ? friends!.isNotEmpty
                   ? FriendsList(
                       friends: friends!,
-                      onUnfriend: (friend) async {
-                        await _firestoreService.unfriend(friend.uid);
-                        await _loadFriends(isPreferPref: false);
-                        await _loadSentFriendRequests(isPreferPref: false);
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Unfriended ${friend.username}')),
-                        );
-                      },
-                    )
+              onUnfriend: (friend) async {
+                try {
+                  await _firestoreService.unfriend(friend.uid);
+                  await _loadFriends(isPreferPref: false);
+                  await _loadSentFriendRequests(isPreferPref: false);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Unfriended ${friend.username}')),
+                  );
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to unfriend: $e')),
+                    );
+                  }
+                }
+              },
+            )
                   : Center(
                       child: Text("You have no friend yet", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: strongBlueColor))
                     )
