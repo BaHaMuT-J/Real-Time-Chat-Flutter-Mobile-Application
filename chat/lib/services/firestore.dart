@@ -359,4 +359,45 @@ class FirestoreService {
     debugPrint('Deleted sent request in id $currentUid to $receiverUid');
   }
 
+  Future<void> unfriend(String friendUID) async {
+    final currentUid = _auth.currentUser!.uid;
+
+    await _firestore
+        .collection('users')
+        .doc(friendUID)
+        .collection('friends')
+        .doc(currentUid)
+        .delete();
+
+    debugPrint('Deleted friend $currentUid from $friendUID friends list');
+
+    await _firestore
+        .collection('users')
+        .doc(currentUid)
+        .collection('friends')
+        .doc(friendUID)
+        .delete();
+
+    debugPrint('Deleted friend $friendUID from $currentUid friends list');
+
+    // Clean up any leftover sent friend requests
+    await _firestore
+        .collection('users')
+        .doc(currentUid)
+        .collection('sent_friend_requests')
+        .doc(friendUID)
+        .delete()
+        .catchError((e) => debugPrint('No sent request to $friendUID to delete'));
+
+    await _firestore
+        .collection('users')
+        .doc(friendUID)
+        .collection('sent_friend_requests')
+        .doc(currentUid)
+        .delete()
+        .catchError((e) => debugPrint('No sent request from $friendUID to delete'));
+
+    debugPrint('Completed unfriend cleanup between $currentUid and $friendUID');
+  }
+
 }

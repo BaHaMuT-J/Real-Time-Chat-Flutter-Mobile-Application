@@ -214,7 +214,18 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
             const SizedBox(height: 12),
             friends != null
                 ? friends!.isNotEmpty
-                  ? FriendsList(friends: friends!)
+                  ? FriendsList(
+                      friends: friends!,
+                      onUnfriend: (friend) async {
+                        await _firestoreService.unfriend(friend.uid);
+                        await _loadFriends(isPreferPref: false);
+                        await _loadSentFriendRequests(isPreferPref: false);
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Unfriended ${friend.username}')),
+                        );
+                      },
+                    )
                   : Center(
                       child: Text("You have no friend yet", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: strongBlueColor))
                     )
