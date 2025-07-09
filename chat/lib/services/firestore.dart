@@ -8,6 +8,22 @@ class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  Future<void> updateProfile({
+    required String email,
+    required String username,
+    required String description,
+    required String profileImageUrl,
+  }) async {
+    await _firestore.collection('users').doc(_auth.currentUser!.uid).set({
+      'email': email,
+      'username': username,
+      'description': description,
+      'profileImageUrl': profileImageUrl,
+    });
+
+    await UserPrefs.saveUserProfile(username, description, profileImageUrl);
+  }
+
   Future<Map<String, dynamic>?> loadProfile() async {
     final usernamePref = await UserPrefs.getUsername();
     final isLoadPref = await UserPrefs.getIsLoad();
@@ -89,19 +105,93 @@ class FirestoreService {
     return friendUsers;
   }
 
-  Future<void> updateProfile({
-    required String email,
-    required String username,
-    required String description,
-    required String profileImageUrl,
-  }) async {
-    await _firestore.collection('users').doc(_auth.currentUser!.uid).set({
-      'email': email,
-      'username': username,
-      'description': description,
-      'profileImageUrl': profileImageUrl,
-    });
+  Future<List<Map<String, dynamic>>> getAllSentFriendRequest() async {
+    final uid = _auth.currentUser!.uid;
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('sent_friend_requests')
+        .get();
 
-    await UserPrefs.saveUserProfile(username, description, profileImageUrl);
+    final List<Map<String, dynamic>> requests = [];
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final DocumentReference userRef = data['user'];
+
+      // Get user data
+      final userSnap = await userRef.get();
+      final userData = userSnap.data() as Map<String, dynamic>;
+      userData['uid'] = userSnap.id;
+      final userModel = UserModel.fromJson(userData);
+
+      requests.add({
+        'user': userModel,
+        'status': data['status'],
+      });
+    }
+
+    debugPrint('Sent friend requests (resolved): $requests');
+    return requests;
   }
+
+  Future<List<Map<String, dynamic>>> getAllReceivedFriendRequest() async {
+    final uid = _auth.currentUser!.uid;
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('received_friend_requests')
+        .get();
+
+    final List<Map<String, dynamic>> requests = [];
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final DocumentReference userRef = data['user'];
+
+      final userSnap = await userRef.get();
+      final userData = userSnap.data() as Map<String, dynamic>;
+      userData['uid'] = userSnap.id;
+      final userModel = UserModel.fromJson(userData);
+
+      requests.add({
+        'user': userModel,
+        'status': data['status'],
+      });
+    }
+
+    debugPrint('Received friend requests (resolved): $requests');
+    return requests;
+  }
+
+  Future<void> sendFriendRequest(String receiverUid) async {
+    final currentUid = _auth.currentUser!.uid;
+
+    final currentUserRef = _firestore.collection('users').doc(currentUid);
+    final receiverUserRef = _firestore.collection('users').doc(receiverUid);
+
+    await _firestore
+        .collection('users')
+        .doc(currentUid)
+        .collection('sent_friend_requests')
+        .doc(receiverUid)
+        .set({
+          'user': receiverUserRef,
+          'status': 'pending',
+        });
+
+    debugPrint('Create sent request in $currentUid');
+
+    await _firestore
+        .collection('users')
+        .doc(receiverUid)
+        .collection('received_friend_requests')
+        .doc(currentUid)
+        .set({
+          'user': currentUserRef,
+        });
+
+    debugPrint('Create received request in $receiverUid');
+  }
+
 }
