@@ -1,7 +1,7 @@
 import 'package:chat/constant.dart';
 import 'package:chat/pages/main_page.dart';
 import 'package:chat/pages/register_page.dart';
-import 'package:chat/user.dart';
+import 'package:chat/userPref.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 

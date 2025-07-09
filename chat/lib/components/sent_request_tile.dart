@@ -1,9 +1,10 @@
 import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/constant.dart';
+import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:flutter/material.dart';
 
 class SentFriendRequestTile extends StatefulWidget {
-  final SentFriendRequest request;
+  final SentFriendRequestModel request;
   final Future<void> Function() onCancel;
   final Future<void> Function() onClose;
 

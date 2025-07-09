@@ -3,12 +3,14 @@ import 'package:chat/components/add_friend_sheet.dart';
 import 'package:chat/components/edit_profile_sheet.dart';
 import 'package:chat/components/friend_list.dart';
 import 'package:chat/components/friend_request_sheet.dart';
+import 'package:chat/model/sent_friend_request_model.dart';
+import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/services/firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:chat/constant.dart';
-import 'package:chat/user.dart';
+import 'package:chat/userPref.dart';
 import 'package:image_picker/image_picker.dart';
 
 class HomeInfoPage extends StatefulWidget {
@@ -29,7 +31,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
   bool hasPendingNotifications = true; // Not implement yet
 
   List<UserModel>? friends;
-  List<SentFriendRequest>? sentFriendRequests;
+  List<SentFriendRequestModel>? sentFriendRequests;
   List<UserModel>? receivedFriendRequests;
 
   Set<String> sentRequests = {};
@@ -258,7 +260,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
                 ? friends!.isNotEmpty
                   ? FriendsList(
                       friends: friends!,
-              onUnfriend: (friend) async {
+              onUnfriend: (UserModel friend) async {
                 try {
                   await _firestoreService.unfriend(friend.uid);
                   await _loadFriends(isPreferPref: false);

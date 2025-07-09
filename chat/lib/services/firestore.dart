@@ -1,7 +1,8 @@
-import 'package:chat/constant.dart';
+import 'package:chat/model/sent_friend_request_model.dart';
+import 'package:chat/model/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:chat/user.dart';
+import 'package:chat/userPref.dart';
 import 'package:flutter/cupertino.dart';
 
 class FirestoreService {
@@ -105,7 +106,7 @@ class FirestoreService {
     return friendUsers;
   }
 
-  Future<List<SentFriendRequest>> getAllSentFriendRequest({ bool isPreferPref = true}) async {
+  Future<List<SentFriendRequestModel>> getAllSentFriendRequest({ bool isPreferPref = true}) async {
     final sentFriendRequestsListRef = await UserPrefs.getSentFriendRequests();
     final isLoadPref = await UserPrefs.getIsLoad();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
@@ -123,7 +124,7 @@ class FirestoreService {
         .collection('sent_friend_requests')
         .get();
 
-    final List<SentFriendRequest> requests = [];
+    final List<SentFriendRequestModel> requests = [];
 
     for (var doc in snapshot.docs) {
       final data = doc.data();
@@ -134,7 +135,7 @@ class FirestoreService {
       userData['uid'] = userSnap.id;
       final userModel = UserModel.fromJson(userData);
 
-      requests.add(SentFriendRequest(user: userModel, status: data['status']));
+      requests.add(SentFriendRequestModel(user: userModel, status: data['status']));
     }
 
     UserPrefs.saveSentFriendRequests(requests);

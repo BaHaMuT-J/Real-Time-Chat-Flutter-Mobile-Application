@@ -1,10 +1,12 @@
+import 'package:chat/model/sent_friend_request_model.dart';
+import 'package:chat/model/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:chat/components/received_request_tile.dart';
 import 'package:chat/components/sent_request_tile.dart';
 import 'package:chat/constant.dart';
 
 class FriendRequestsSheet extends StatelessWidget {
-  final List<SentFriendRequest>? sentRequests;
+  final List<SentFriendRequestModel>? sentRequests;
   final List<UserModel>? receivedRequests;
   final Future<void> Function(String uid) onCancelSent;
   final Future<void> Function(String uid) onCloseSent;

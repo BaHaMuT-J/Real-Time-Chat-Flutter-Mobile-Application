@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:ffi';
 
-import 'package:chat/constant.dart';
+import 'package:chat/model/sent_friend_request_model.dart';
+import 'package:chat/model/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserPrefs {
@@ -65,19 +65,19 @@ class UserPrefs {
         .toList();
   }
 
-  static Future<void> saveSentFriendRequests(List<SentFriendRequest> requests) async {
+  static Future<void> saveSentFriendRequests(List<SentFriendRequestModel> requests) async {
     final prefs = await UserPrefs._getPrefs();
     List<String> requestJsonList = requests.map((request) => jsonEncode(request.toJson())).toList();
     await prefs.setStringList('sentRequestsList', requestJsonList);
   }
 
-  static Future<List<SentFriendRequest>> getSentFriendRequests() async {
+  static Future<List<SentFriendRequestModel>> getSentFriendRequests() async {
     final prefs = await UserPrefs._getPrefs();
     List<String>? request = prefs.getStringList('sentRequestsList');
     if (request == null) return [];
 
     return request
-        .map((requestJson) => SentFriendRequest.fromJson(jsonDecode(requestJson)))
+        .map((requestJson) => SentFriendRequestModel.fromJson(jsonDecode(requestJson)))
         .toList();
   }
 

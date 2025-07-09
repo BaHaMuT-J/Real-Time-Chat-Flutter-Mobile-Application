@@ -1,5 +1,6 @@
 import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/constant.dart';
+import 'package:chat/model/user_model.dart';
 import 'package:flutter/material.dart';
 
 class ReceivedFriendRequestTile extends StatefulWidget {
