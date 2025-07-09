@@ -19,7 +19,7 @@ class StatusTile extends StatelessWidget {
       child: ListTile(
         leading: switch (request.status) {
           'Pending...' => const Icon(Icons.hourglass_top, color: Colors.grey),
-          'Approved'   => const Icon(Icons.check_circle, color: Colors.green),
+          'Accepted'   => const Icon(Icons.check_circle, color: Colors.green),
           'Rejected'   => const Icon(Icons.cancel, color: Colors.red),
           _            => const Icon(Icons.help_outline),
         },

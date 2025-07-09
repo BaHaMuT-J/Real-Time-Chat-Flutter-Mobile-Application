@@ -97,9 +97,11 @@ class FirestoreService {
       return UserModel.fromJson(data);
     }).toList();
 
+    friendUsers.sort((a, b) => a.username.compareTo(b.username));
+
     UserPrefs.saveFriendsList(friendUsers);
 
-    debugPrint('$friendUsers');
+    debugPrint('friends lists: $friendUsers');
     return friendUsers;
   }
 
@@ -223,6 +225,7 @@ class FirestoreService {
         .collection('users')
         .doc(currentUid)
         .collection('sent_friend_requests')
+        .where('status', isEqualTo: 'Pending...')
         .get();
     final sentUids = sentSnap.docs.map((doc) => doc.id).toSet();
 
@@ -239,11 +242,12 @@ class FirestoreService {
         .collection('users')
         .where('username', isGreaterThanOrEqualTo: keyword)
         .where('username', isLessThanOrEqualTo: '$keyword\uf8ff')
+        .orderBy('username')
         .get();
 
     final List<UserModel> results = [];
     for (var doc in userSnap.docs) {
-      if (doc.id == currentUid) continue; // exclude self
+      if (doc.id == currentUid) continue;
       if (friendUids.contains(doc.id)) continue;
       if (sentUids.contains(doc.id)) continue;
       if (receivedUids.contains(doc.id)) continue;
@@ -255,6 +259,104 @@ class FirestoreService {
 
     debugPrint('Search results for "$keyword": ${results.map((u) => u.username)}');
     return results;
+  }
+
+  Future<void> acceptFriendRequest(String senderUid) async {
+    final currentUid = _auth.currentUser!.uid;
+
+    await _firestore
+        .collection('users')
+        .doc(senderUid)
+        .collection('sent_friend_requests')
+        .doc(currentUid)
+        .update({'status': 'Accepted'});
+
+    debugPrint('Update sent request in id $senderUid to Accepted');
+
+    await _firestore
+        .collection('users')
+        .doc(currentUid)
+        .collection('received_friend_requests')
+        .doc(senderUid)
+        .delete();
+
+    debugPrint('Delete received request in id $currentUid');
+
+    final currentUserRef = _firestore.collection('users').doc(currentUid);
+    final senderUserRef = _firestore.collection('users').doc(senderUid);
+
+    await _firestore.collection('users').doc(currentUid)
+        .collection('friends')
+        .doc(senderUid)
+        .set({'friend': senderUserRef});
+
+    debugPrint('Add friend in id $currentUid with $senderUid');
+
+    await _firestore.collection('users').doc(senderUid)
+        .collection('friends')
+        .doc(currentUid)
+        .set({'friend': currentUserRef});
+
+    debugPrint('Add friend in id $senderUid with $currentUid');
+  }
+
+  Future<void> rejectFriendRequest(String senderUid) async {
+    final currentUid = _auth.currentUser!.uid;
+
+    debugPrint('Try to reject request from $senderUid tp $currentUid');
+
+    await _firestore
+        .collection('users')
+        .doc(senderUid)
+        .collection('sent_friend_requests')
+        .doc(currentUid)
+        .update({'status': 'Rejected'});
+
+    debugPrint('Update sent request in id $senderUid to Rejected');
+
+    await _firestore
+        .collection('users')
+        .doc(currentUid)
+        .collection('received_friend_requests')
+        .doc(senderUid)
+        .delete();
+
+    debugPrint('Delete received request in id $currentUid');
+  }
+
+  Future<void> cancelSentRequest(String receiverUid) async {
+    final currentUid = _auth.currentUser!.uid;
+
+    await _firestore
+        .collection('users')
+        .doc(currentUid)
+        .collection('sent_friend_requests')
+        .doc(receiverUid)
+        .delete();
+
+    debugPrint('Delete sent request in id $currentUid');
+
+    await _firestore
+        .collection('users')
+        .doc(receiverUid)
+        .collection('received_friend_requests')
+        .doc(currentUid)
+        .delete();
+
+    debugPrint('Delete received request in id $receiverUid');
+  }
+
+  Future<void> closeSentRequest(String receiverUid) async {
+    final currentUid = _auth.currentUser!.uid;
+
+    await _firestore
+        .collection('users')
+        .doc(currentUid)
+        .collection('sent_friend_requests')
+        .doc(receiverUid)
+        .delete();
+
+    debugPrint('Deleted sent request in id $currentUid to $receiverUid');
   }
 
 }

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:chat/components/action_tile.dart';
+import 'package:chat/components/add_friend_sheet.dart';
 import 'package:chat/components/edit_profile_sheet.dart';
 import 'package:chat/components/friend_list.dart';
 import 'package:chat/components/status_tile.dart';
@@ -148,89 +149,14 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
   }
 
   void _addFriendSheet() {
-    final searchController = TextEditingController();
-    final ValueNotifier<List<UserModel>> searchResults = ValueNotifier([]);
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: lightBlueGreenColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => AddFriendSheet(
+        onRequestSent: () => _loadSentFriendRequests(isPreferPref: false),
       ),
-      builder: (context) {
-        Set<String> localSentRequests = {};
-
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-              child: DraggableScrollableSheet(
-                initialChildSize: 0.6,
-                minChildSize: 0.3,
-                maxChildSize: 0.8,
-                expand: false,
-                builder: (_, controller) => SingleChildScrollView(
-                  controller: controller,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        _searchInput(searchController),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: strongBlueColor),
-                          onPressed: () async {
-                            final query = searchController.text.trim().toLowerCase();
-                            final results = await FirestoreService().searchUsers(query);
-                            searchResults.value = results;
-                            localSentRequests.clear(); // optional reset or keep previous
-                          },
-                          child: const Text("Search", style: TextStyle(color: Colors.white)),
-                        ),
-                        const SizedBox(height: 16),
-                        ValueListenableBuilder<List<UserModel>>(
-                          valueListenable: searchResults,
-                          builder: (_, users, __) {
-                            return Column(
-                              children: users.map((user) {
-                                final isSent = localSentRequests.contains(user.uid);
-                                return ListTile(
-                                  leading: CircleAvatar(child: Text(user.username[0])),
-                                  title: Text(user.username, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: strongBlueColor)),
-                                  subtitle: Text(user.description, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: weakBlueColor)),
-                                  trailing: isSent
-                                      ? Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    child: Text(
-                                      "Sent",
-                                      style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
-                                    ),
-                                  )
-                                      : IconButton(
-                                    icon: const Icon(Icons.person_add, color: strongBlueColor),
-                                    onPressed: () async {
-                                      await FirestoreService().sendFriendRequest(user.uid);
-                                      setModalState(() {
-                                        localSentRequests.add(user.uid);
-                                      });
-                                      _loadSentFriendRequests(isPreferPref: false);
-                                    },
-                                  ),
-                                );
-                              }).toList(),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
@@ -250,8 +176,14 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
               ? sentFriendRequests!
                 .map((request) => StatusTile(
                   request: request,
-                  onCancel: () async {},
-                  onClose: () async {},
+                  onCancel: () async {
+                    await _firestoreService.cancelSentRequest(request.user.uid);
+                    _loadSentFriendRequests(isPreferPref: false);
+                  },
+                  onClose: () async {
+                    await _firestoreService.closeSentRequest(request.user.uid);
+                    _loadSentFriendRequests(isPreferPref: false);
+                  },
                 )).toList()
               : [Text("You have no sent friend request", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: strongBlueColor))]
             : [_loading()]
@@ -263,8 +195,15 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
               ? receivedFriendRequests!
                 .map((user) => ActionTile(
                   user: user,
-                  onApprove: () async {},
-                  onReject: () async {},
+                  onApprove: () async {
+                    await _firestoreService.acceptFriendRequest(user.uid);
+                    _loadReceivedFriendRequests(isPreferPref: false);
+                    _loadFriends(isPreferPref: false);
+                  },
+                  onReject: () async {
+                    await _firestoreService.rejectFriendRequest(user.uid);
+                    _loadReceivedFriendRequests(isPreferPref: false);
+                  },
                 ))
                 .toList()
               : [Text("You have no received friend request", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: strongBlueColor))]
@@ -341,20 +280,6 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
       ]),
     ],
   );
-
-  Widget _searchInput(TextEditingController controller) =>
-      TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: "Search by username",
-          labelStyle: const TextStyle(color: strongBlueColor),
-          prefixIcon: const Icon(Icons.search, color: strongBlueColor),
-          enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: strongBlueColor)),
-          focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: weakBlueColor, width: 2)),
-        ),
-        style: const TextStyle(color: strongBlueColor),
-        cursorColor: strongBlueColor,
-      );
 
   Widget _sectionTitle(String title) => Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: strongBlueColor));
   Widget _subTitle(String subtitle) => Text(subtitle, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: weakBlueColor));
