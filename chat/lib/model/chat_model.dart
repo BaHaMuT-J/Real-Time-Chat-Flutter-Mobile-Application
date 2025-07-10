@@ -36,7 +36,7 @@ class ChatModel {
       'chatId': chatId,
       'users': users,
       'lastMessage': lastMessage,
-      'lastMessageTimeStamp': lastMessageTimeStamp,
+      'lastMessageTimeStamp': lastMessageTimeStamp?.toIso8601String(),
       'lastSender': lastSender,
       'unreadCounts': unreadCounts,
       'isGroup': isGroup,
@@ -50,7 +50,11 @@ class ChatModel {
       chatId: json['chatId'],
       users: List<String>.from(json['users']),
       lastMessage: json['lastMessage'] as String?,
-      lastMessageTimeStamp: (json['lastMessageTimeStamp'] as Timestamp?)?.toDate(),
+      lastMessageTimeStamp: json['lastMessageTimeStamp'] != null
+          ? (json['lastMessageTimeStamp'] is String
+          ? DateTime.parse(json['lastMessageTimeStamp'])
+          : (json['lastMessageTimeStamp'] as Timestamp).toDate())
+          : null,
       lastSender: json['lastSender'] as String?,
       unreadCounts: Map<String, int>.from(json['unreadCounts'] ?? {}),
       isGroup: json['isGroup'] as bool? ?? false,

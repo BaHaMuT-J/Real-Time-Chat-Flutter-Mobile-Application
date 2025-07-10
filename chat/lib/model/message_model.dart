@@ -26,7 +26,7 @@ class MessageModel {
       'messageId': messageId,
       'senderId': senderId,
       'text': text,
-      'timeStamp': timeStamp,
+      'timeStamp': timeStamp.toIso8601String(),
       'readBys': readBys,
     };
   }
@@ -36,7 +36,11 @@ class MessageModel {
       messageId: json['messageId'] as String,
       senderId: json['senderId'] as String,
       text: json['text'] as String,
-      timeStamp: (json['timeStamp'] as Timestamp).toDate(),
+      timeStamp: json['timeStamp'] != null
+          ? (json['timeStamp'] is String
+          ? DateTime.parse(json['timeStamp'])
+          : (json['timeStamp'] as Timestamp).toDate())
+          : DateTime.now(),
       readBys: List<String>.from(json['readBys'] ?? []),
     );
   }

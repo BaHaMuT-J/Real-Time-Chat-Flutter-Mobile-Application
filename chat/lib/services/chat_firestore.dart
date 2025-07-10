@@ -146,4 +146,43 @@ class ChatFirestoreService {
     return messages;
   }
 
+  Future<void> sendMessage(String chatId, String text) async {
+    final currentUID = currentUid;
+    final messageRef = _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc();
+
+    await messageRef.set({
+      'senderId': currentUID,
+      'text': text,
+      'timeStamp': FieldValue.serverTimestamp(),
+      'readBys': [currentUID],
+    });
+
+    debugPrint('Sent message to $chatId: $text');
+
+    // Update chat preview
+    await _firestore.collection('chats').doc(chatId).update({
+      'lastMessage': text,
+      'lastMessageTimeStamp': FieldValue.serverTimestamp(),
+      'lastSender': currentUID,
+      'unreadCounts.$currentUID': 0,
+    });
+
+    // Increment unread counts for other users
+    final chatDoc = await _firestore.collection('chats').doc(chatId).get();
+    final users = List<String>.from(chatDoc.data()?['users'] ?? []);
+    for (final uid in users) {
+      if (uid != currentUID) {
+        await _firestore.collection('chats').doc(chatId).update({
+          'unreadCounts.$uid': FieldValue.increment(1),
+        });
+      }
+    }
+
+    UserPrefs.saveIsLoadChat(false);
+  }
+
 }

@@ -8,7 +8,6 @@ import 'package:chat/pages/login_page.dart';
 import 'package:chat/services/chat_firestore.dart';
 import 'package:chat/services/user_firestore.dart';
 import 'package:chat/userPref.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -212,6 +211,9 @@ class _ChatListPageState extends State<ChatListPage> {
       ),
       onTap: () async {
         debugPrint('Tapped on chat: $chatId');
+        await _chatFirestoreService.getMessages(chatId);
+        await _chatFirestoreService.sendMessage(chatId, "Test");
+        await _loadChats();
         await _chatFirestoreService.getMessages(chatId);
         // Example: navigate to ChatPage
         // Navigator.push(context, MaterialPageRoute(
