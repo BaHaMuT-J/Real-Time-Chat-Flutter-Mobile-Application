@@ -11,6 +11,25 @@ class UserFirestoreService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
 
+  Future<UserModel?> getUser(String uid) async {
+    try {
+      final docSnap = await _firestore.collection('users').doc(uid).get();
+      if (docSnap.exists) {
+        final data = docSnap.data()!;
+        data['uid'] = uid;
+        final user = UserModel.fromJson(data);
+        debugPrint('Get user: $user');
+        return user;
+      } else {
+        debugPrint('User $uid not found');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error getting user $uid: $e');
+      return null;
+    }
+  }
+
   Future<void> updateProfile({
     required String email,
     required String username,
@@ -303,6 +322,7 @@ class UserFirestoreService {
     debugPrint('Add friend in id $senderUid with $currentUid');
 
     // Create chat between these users
+    await UserPrefs.saveIsLoadChat(false);
     _chatFirestoreService.createChat(senderUid);
   }
 
@@ -406,6 +426,7 @@ class UserFirestoreService {
     debugPrint('UserFirestore cleanup between $currentUid and $friendUID');
 
     // Delete chat between these users
+    await UserPrefs.saveIsLoadChat(false);
     _chatFirestoreService.deleteChat(friendUID);
   }
 

@@ -22,16 +22,17 @@ class ChatFirestoreService {
       'lastMessageTimeStamp': null,
       'lastSender': null,
       'unreadCounts': {currentUID: 0, friendUID: 0},
+      'isGroup': false,
+      'chatName': null,
+      'chatImageUrl': null,
     });
 
     debugPrint('Create chat $chatId');
 
     await _firestore.collection('users').doc(currentUID).collection('chats').doc(chatId).set({});
-
     debugPrint('Create chatRef in $currentUID successfully');
 
     await _firestore.collection('users').doc(friendUID).collection('chats').doc(chatId).set({});
-
     debugPrint('Create chatRef in $friendUID successfully');
 
     return chatId;

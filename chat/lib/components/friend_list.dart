@@ -77,7 +77,6 @@ class _FriendsListState extends State<FriendsList> {
                 ),
               ),
             ),
-            const Divider(),
           ],
         );
       }).toList(),

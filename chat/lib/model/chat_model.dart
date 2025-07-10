@@ -7,6 +7,9 @@ class ChatModel {
   final DateTime? lastMessageTimeStamp;
   final String? lastSender;
   final Map<String, int> unreadCounts;
+  final bool isGroup;
+  final String? chatName;
+  final String? chatImageUrl;
 
   ChatModel({
     required this.chatId,
@@ -15,13 +18,17 @@ class ChatModel {
     required this.lastMessageTimeStamp,
     required this.lastSender,
     required this.unreadCounts,
+    required this.isGroup,
+    required this.chatName,
+    required this.chatImageUrl,
   });
 
   @override
   String toString() {
     return 'ChatModel(chatId: $chatId, users: $users, lastMessage: $lastMessage, '
         'lastMessageTimeStamp: $lastMessageTimeStamp, lastSender: $lastSender, '
-        'unreadCounts: $unreadCounts)';
+        'unreadCounts: $unreadCounts, isGroup: $isGroup, '
+        'chatName: $chatName, chatImageUrl: $chatImageUrl)';
   }
 
   Map<String, dynamic> toJson() {
@@ -32,6 +39,9 @@ class ChatModel {
       'lastMessageTimeStamp': lastMessageTimeStamp,
       'lastSender': lastSender,
       'unreadCounts': unreadCounts,
+      'isGroup': isGroup,
+      'chatName': chatName,
+      'chatImageUrl': chatImageUrl,
     };
   }
 
@@ -43,6 +53,9 @@ class ChatModel {
       lastMessageTimeStamp: (json['lastMessageTimeStamp'] as Timestamp?)?.toDate(),
       lastSender: json['lastSender'] as String?,
       unreadCounts: Map<String, int>.from(json['unreadCounts'] ?? {}),
+      isGroup: json['isGroup'] as bool? ?? false,
+      chatName: json['chatName'] as String?,
+      chatImageUrl: json['chatImageUrl'] as String?,
     );
   }
 }
