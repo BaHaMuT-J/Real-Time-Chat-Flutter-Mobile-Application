@@ -124,6 +124,7 @@ class _ChatListPageState extends State<ChatListPage> {
           if (chat.isGroup) {
             // GROUP CHAT: show group name & image
             return _buildChatTile(
+              chat: chat,
               chatId: chat.chatId,
               name: chat.chatName ?? "Unnamed Group",
               imageUrl: chat.chatImageUrl ?? "",
@@ -148,6 +149,7 @@ class _ChatListPageState extends State<ChatListPage> {
                 final friend = snapshot.data!;
 
                 return _buildChatTile(
+                  chat: chat,
                   chatId: chat.chatId,
                   name: friend.username,
                   imageUrl: friend.profileImageUrl,
@@ -164,6 +166,7 @@ class _ChatListPageState extends State<ChatListPage> {
   }
 
   Widget _buildChatTile({
+    required ChatModel chat,
     required String chatId,
     required String name,
     required String imageUrl,
@@ -211,14 +214,10 @@ class _ChatListPageState extends State<ChatListPage> {
       ),
       onTap: () async {
         debugPrint('Tapped on chat: $chatId');
-        await _chatFirestoreService.getMessages(chatId);
-        await _chatFirestoreService.sendMessage(chatId, "Test");
-        await _loadChats();
-        await _chatFirestoreService.getMessages(chatId);
-        // Example: navigate to ChatPage
-        // Navigator.push(context, MaterialPageRoute(
-        //   builder: (_) => ChatPage(chatId: chatId, chatName: name),
-        // ));
+
+        Navigator.push(context, MaterialPageRoute(
+          builder: (_) => ChatPage(chat: chat, chatName: name,),
+        ));
       },
     );
   }

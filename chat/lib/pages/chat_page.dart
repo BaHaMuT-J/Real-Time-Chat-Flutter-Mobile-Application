@@ -1,14 +1,18 @@
 import 'package:chat/constant.dart';
+import 'package:chat/model/chat_model.dart';
+import 'package:chat/model/message_model.dart';
+import 'package:chat/services/chat_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ChatPage extends StatefulWidget {
-  final String chatName;
-  final List<Message> initialMessages;
+  final ChatModel chat;
+  final String? chatName;
 
   const ChatPage({
     super.key,
-    required this.chatName,
-    required this.initialMessages,
+    required this.chat,
+    this.chatName,
   });
 
   @override
@@ -16,29 +20,48 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  late List<Message> messages;
+  final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  String get currentUid => _auth.currentUser!.uid;
+
+  late List<MessageModel> messages;
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    messages = widget.initialMessages;
+    messages = [];
+
     _controller.addListener(() {
-      setState(() {}); // Update send button enabled state
+      setState(() {}); // Enable / disable send button
     });
 
-    // Wait for widgets to build, then scroll
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadMessages();
       _scrollToFirstUnread();
     });
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMessages() async {
+    final fetchedMessages = await _chatFirestoreService.getMessages(widget.chat.chatId);
+    setState(() {
+      messages = fetchedMessages;
+    });
+  }
+
   void _scrollToFirstUnread() {
-    final index = messages.indexWhere((msg) => msg.isRead == false);
+    final index = messages.indexWhere((msg) => !msg.readBys.contains(currentUid));
 
     if (index != -1 && _scrollController.hasClients) {
-      double offset = index * 80.0; // approximate height per item
+      double offset = index * 80.0;
       offset = (offset - 50).clamp(0.0, _scrollController.position.maxScrollExtent);
 
       _scrollController.animateTo(
@@ -49,21 +72,17 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    final newMsg = Message(
-      text: text,
-      isMe: true,
-      time: DateTime.now(),
-      isRead: false,
-    );
+    await _chatFirestoreService.sendMessage(widget.chat.chatId, text);
 
     setState(() {
-      messages.add(newMsg);
       _controller.clear();
     });
+
+    await _loadMessages();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -78,139 +97,132 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          Navigator.pop(context, messages);
-        }
-      },
-      child: Scaffold(
-        backgroundColor: lightBlueGreenColor,
-        appBar: AppBar(
-          backgroundColor: lightBlueColor,
-          title: Row(
-            children: [
-              Text(
-                widget.chatName,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w600,
-                  color: strongBlueColor,
-                ),
-              ),
-            ],
+    return Scaffold(
+      backgroundColor: lightBlueGreenColor,
+      appBar: AppBar(
+        backgroundColor: lightBlueColor,
+        title: Text(
+          widget.chat.chatName ?? (widget.chatName ?? "Chat"),
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w600,
+            color: strongBlueColor,
           ),
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final msg = messages[index];
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final msg = messages[index];
 
-                  // Find if this is the first unread message
-                  final isFirstUnread = (msg.isMe == false && msg.isRead == false &&
-                      (index == 0 || messages[index - 1].isRead == true));
+                final isMe = msg.senderId == currentUid;
+                final isFirstUnread = (!msg.readBys.contains(currentUid) &&
+                    (index == 0 || messages[index - 1].readBys.contains(currentUid)));
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (isFirstUnread)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            children: const [
-                              Expanded(child: Divider()),
-                              SizedBox(width: 8),
-                              Text(
-                                "New Messages",
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Expanded(child: Divider()),
-                            ],
-                          ),
-                        ),
-                      ChatBubble(message: msg),
-                    ],
-                  );
-                },
-              ),
-            ),
-            SafeArea(
-              child: Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: lightBlueColor,
-                child: Row(
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        textCapitalization: TextCapitalization.sentences,
-                        decoration: InputDecoration(
-                          hintText: "Type a message...",
-                          hintStyle: TextStyle(
-                            color: strongBlueColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 14),
+                    if (isFirstUnread)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: const [
+                            Expanded(child: Divider()),
+                            SizedBox(width: 8),
+                            Text(
+                              "New Messages",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(child: Divider()),
+                          ],
                         ),
-                        onSubmitted: (_) => _sendMessage(),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed:
-                      _controller.text.trim().isEmpty ? null : _sendMessage,
-                      style: ElevatedButton.styleFrom(
-                        shape: const CircleBorder(),
-                        padding: const EdgeInsets.all(12),
-                        foregroundColor: Colors.blue
-                      ),
-                      child: const Icon(Icons.send),
+                    ChatBubble(
+                      text: msg.text,
+                      time: msg.timeStamp,
+                      isMe: isMe,
+                      isRead: msg.readBys.contains(currentUid),
                     ),
                   ],
-                ),
+                );
+              },
+            ),
+          ),
+          SafeArea(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: lightBlueColor,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: "Type a message...",
+                        hintStyle: const TextStyle(
+                          color: strongBlueColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 14),
+                      ),
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _controller.text.trim().isEmpty ? null : _sendMessage,
+                    style: ElevatedButton.styleFrom(
+                      shape: const CircleBorder(),
+                      padding: const EdgeInsets.all(12),
+                      foregroundColor: Colors.blue,
+                    ),
+                    child: const Icon(Icons.send),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
 }
 
-// Chat bubble widget
+// Chat bubble for MessageModel
 class ChatBubble extends StatelessWidget {
-  final Message message;
-  const ChatBubble({super.key, required this.message});
+  final String text;
+  final DateTime time;
+  final bool isMe;
+  final bool isRead;
+
+  const ChatBubble({
+    super.key,
+    required this.text,
+    required this.time,
+    required this.isMe,
+    required this.isRead,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final align =
-    message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final color = message.isMe ? Colors.blueAccent : Colors.white;
-    final textColor = message.isMe ? Colors.white : Colors.black87;
-    final radius = message.isMe
+    final align = isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    final color = isMe ? Colors.blueAccent : Colors.white;
+    final textColor = isMe ? Colors.white : Colors.black87;
+    final radius = isMe
         ? const BorderRadius.only(
       topLeft: Radius.circular(16),
       topRight: Radius.circular(0),
@@ -230,15 +242,15 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: align,
         children: [
           Container(
-            constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75),
+            constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: color,
               borderRadius: radius,
             ),
             child: Text(
-              message.text,
+              text,
               style: TextStyle(color: textColor),
             ),
           ),
@@ -247,15 +259,15 @@ class ChatBubble extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                formatTime(message.time),
+                formatTime(time),
                 style: const TextStyle(fontSize: 10, color: Colors.grey),
               ),
-              if (message.isMe) ...[
+              if (isMe) ...[
                 const SizedBox(width: 4),
                 Icon(
-                  message.isRead ? Icons.check : null,
+                  isRead ? Icons.check : null,
                   size: 14,
-                  color: message.isRead ? Colors.blue : Colors.grey,
+                  color: isRead ? Colors.blue : Colors.grey,
                 ),
               ],
             ],
