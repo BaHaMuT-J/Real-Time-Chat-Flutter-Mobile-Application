@@ -1,5 +1,6 @@
 import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/model/chat_model.dart';
+import 'package:chat/model/message_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/chat_page.dart';
 import 'package:chat/constant.dart';
@@ -209,8 +210,9 @@ class _ChatListPageState extends State<ChatListPage> {
             ),
         ],
       ),
-      onTap: () {
+      onTap: () async {
         debugPrint('Tapped on chat: $chatId');
+        await _chatFirestoreService.getMessages(chatId);
         // Example: navigate to ChatPage
         // Navigator.push(context, MaterialPageRoute(
         //   builder: (_) => ChatPage(chatId: chatId, chatName: name),

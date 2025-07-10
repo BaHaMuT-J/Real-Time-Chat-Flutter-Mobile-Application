@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class MessageModel {
   final String messageId;
   final String senderId;
@@ -34,8 +36,8 @@ class MessageModel {
       messageId: json['messageId'] as String,
       senderId: json['senderId'] as String,
       text: json['text'] as String,
-      timeStamp: json['timeStamp'] as DateTime,
-      readBys: List<String>.from(json['readBys']),
+      timeStamp: (json['timeStamp'] as Timestamp).toDate(),
+      readBys: List<String>.from(json['readBys'] ?? []),
     );
   }
 }

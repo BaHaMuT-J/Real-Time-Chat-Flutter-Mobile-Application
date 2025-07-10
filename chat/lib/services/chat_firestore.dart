@@ -1,4 +1,5 @@
 import 'package:chat/model/chat_model.dart';
+import 'package:chat/model/message_model.dart';
 import 'package:chat/userPref.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -120,6 +121,29 @@ class ChatFirestoreService {
     UserPrefs.saveChats(chats);
 
     return chats;
+  }
+
+  Future<List<MessageModel>> getMessages(String chatId) async {
+    final messagesSnap = await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('timeStamp', descending: false)
+        .get();
+
+    final messages = messagesSnap.docs.map((doc) {
+      final data = doc.data();
+      return MessageModel(
+        messageId: doc.id,
+        senderId: data['senderId'] as String,
+        text: data['text'] as String,
+        timeStamp: (data['timeStamp'] as Timestamp).toDate(),
+        readBys: List<String>.from(data['readBys'] ?? []),
+      );
+    }).toList();
+
+    debugPrint('Fetched messages for chat $chatId : $messages');
+    return messages;
   }
 
 }
