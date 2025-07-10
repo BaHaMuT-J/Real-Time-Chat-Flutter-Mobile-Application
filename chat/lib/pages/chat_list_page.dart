@@ -1,6 +1,8 @@
+import 'package:chat/model/chat_model.dart';
 import 'package:chat/pages/chat_page.dart';
 import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
+import 'package:chat/services/chat_firestore.dart';
 import 'package:chat/userPref.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +16,10 @@ class ChatListPage extends StatefulWidget {
 
 class _ChatListPageState extends State<ChatListPage> {
   late final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
+
+  List<ChatModel>? allChats;
+
   List<Chat> chats = [
     Chat(name: "Family Group", messages: [
       Message(
@@ -51,6 +57,48 @@ class _ChatListPageState extends State<ChatListPage> {
     ]),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    appStateNotifier.addListener(_onAppStateChanged);
+    startApp();
+  }
+
+  @override
+  void dispose() {
+    appStateNotifier.removeListener(_onAppStateChanged);
+    super.dispose();
+  }
+
+  void _onAppStateChanged() {
+    debugPrint('On app state changed from chat list page');
+    startApp();
+  }
+
+  void startApp() {
+    debugPrint('Start app from chat list page');
+    Future.wait([
+      _loadChats(),
+    ]).then((_) {
+      UserPrefs.saveIsLoad(true);
+    });
+  }
+
+  Future<void> _loadChats({bool isPreferPref = true}) async {
+    try {
+      final chatUsers = await _chatFirestoreService.getChats(isPreferPref: isPreferPref);
+      setState(() {
+        allChats = chatUsers;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load chats: $e')),
+        );
+      }
+    }
+  }
+
   void _updateChatMessages(int chatIndex, List<Message> updatedMessages) {
     setState(() {
       chats[chatIndex].messages
@@ -60,19 +108,25 @@ class _ChatListPageState extends State<ChatListPage> {
   }
 
   Future<void> _handleLogOut() async {
-    await _auth.signOut();
-
-    await UserPrefs.logout();
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Logout success')),
-    );
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-          (route) => false,
-    );
+    try {
+      await _auth.signOut();
+      await UserPrefs.logout();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+            (_) => false,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Logout success')),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Logout failed: $e')),
+        );
+      }
+    }
   }
 
   @override

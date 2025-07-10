@@ -20,7 +20,7 @@ class HomeInfoPage extends StatefulWidget {
   State<HomeInfoPage> createState() => _HomeInfoPageState();
 }
 
-class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver {
+class _HomeInfoPageState extends State<HomeInfoPage> {
   final _auth = FirebaseAuth.instance;
   final UserFirestoreService _firestoreService = UserFirestoreService();
 
@@ -34,32 +34,26 @@ class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver
   List<SentFriendRequestModel>? sentFriendRequests;
   List<UserModel>? receivedFriendRequests;
 
-  Set<String> sentRequests = {};
-
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    appStateNotifier.addListener(_onAppStateChanged);
     startApp();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    appStateNotifier.removeListener(_onAppStateChanged);
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    debugPrint("AppLifecycleState changed to $state");
-    if (state == AppLifecycleState.paused) {
-      UserPrefs.saveIsLoad(false);
-    } else if (state == AppLifecycleState.resumed) {
-      startApp();
-    }
+  void _onAppStateChanged() {
+    debugPrint('On app state changed from home info page');
+    startApp();
   }
 
   void startApp() {
+    debugPrint('Start app from home info page');
     Future.wait([
       _loadProfile(),
       _loadFriends(),

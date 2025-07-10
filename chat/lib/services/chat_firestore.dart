@@ -1,3 +1,4 @@
+import 'package:chat/model/chat_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -72,4 +73,38 @@ class ChatFirestoreService {
 
     debugPrint("No chat found between $currentUID and $friendUID");
   }
+
+  Future<List<ChatModel>> getChats({ isPreferPref = true }) async {
+    final currentUID = currentUid;
+    final userChatsSnap = await _firestore
+        .collection('users')
+        .doc(currentUID)
+        .collection('chats')
+        .get();
+
+    final chatIds = userChatsSnap.docs.map((d) => d.id).toList();
+
+    debugPrint('Get chatIds: $chatIds');
+    if (chatIds.isEmpty) return [];
+
+    final chatsSnap = await _firestore
+        .collection('chats')
+        .where(FieldPath.documentId, whereIn: chatIds)
+        .get();
+
+    final chats = chatsSnap.docs
+        .map((doc) => ChatModel.fromJson(doc.data(), doc.id))
+        .toList();
+
+    chats.sort((a, b) {
+      final aTime = a.lastMessageTimeStamp ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bTime = b.lastMessageTimeStamp ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bTime.compareTo(aTime);
+    });
+
+    debugPrint('Get chats: $chats');
+
+    return chats;
+  }
+
 }

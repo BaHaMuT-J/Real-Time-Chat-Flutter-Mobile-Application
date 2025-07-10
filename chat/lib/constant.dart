@@ -14,6 +14,16 @@ String formatTime(DateTime time) {
   }
 }
 
+class AppStateNotifier extends ValueNotifier<bool> {
+  AppStateNotifier() : super(false);
+
+  void refresh() {
+    value = !value; // toggle to notify listeners
+  }
+}
+
+final appStateNotifier = AppStateNotifier();
+
 class Chat {
   final String name;
   final List<Message> messages;

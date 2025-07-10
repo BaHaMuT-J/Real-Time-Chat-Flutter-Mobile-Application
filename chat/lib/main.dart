@@ -1,5 +1,8 @@
+import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/pages/main_page.dart';
+import 'package:chat/services/chat_firestore.dart';
+import 'package:chat/services/user_firestore.dart';
 import 'package:chat/userPref.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -22,10 +25,54 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class InitialPage extends StatelessWidget {
+class InitialPage extends StatefulWidget {
   const InitialPage({super.key});
 
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  State<InitialPage> createState() => _InitialPageState();
+}
+
+class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
+  final UserFirestoreService _userFirestoreService = UserFirestoreService();
+  final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    debugPrint("AppLifecycleState changed to $state");
+    if (state == AppLifecycleState.paused) {
+      UserPrefs.saveIsLoad(false);
+    } else if (state == AppLifecycleState.resumed) {
+      startApp(isPreferPref: false);
+    }
+  }
+
+  void startApp({ isPreferPref = true}) {
+    debugPrint('Start app from main.dart');
+    Future.wait([
+      _userFirestoreService.loadProfile(isPreferPref: isPreferPref),
+      _userFirestoreService.loadFriends(isPreferPref: isPreferPref),
+      _userFirestoreService.getAllSentFriendRequest(isPreferPref: isPreferPref),
+      _userFirestoreService.getAllReceivedFriendRequest(isPreferPref: isPreferPref),
+      _chatFirestoreService.getChats(),
+    ]).then((_) {
+      UserPrefs.saveIsLoad(true);
+      appStateNotifier.refresh();
+    });
+  }
 
   Future<Widget> decideStartPage() async {
     final email = await UserPrefs.getEmail();
@@ -33,7 +80,8 @@ class InitialPage extends StatelessWidget {
 
     if (email != null && password != null) {
       try {
-        await _auth.signInWithEmailAndPassword(email: email, password: password);
+        await InitialPage._auth.signInWithEmailAndPassword(email: email, password: password);
+        startApp(isPreferPref: false);
         return const MainPage();
       } on FirebaseAuthException catch (e) {
         debugPrint('Login failed: ${e.message}');
@@ -62,3 +110,4 @@ class InitialPage extends StatelessWidget {
     );
   }
 }
+
