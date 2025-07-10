@@ -6,6 +6,7 @@ class MessageModel {
   final String text;
   final DateTime timeStamp;
   final List<String> readBys;
+  final bool isFile;
 
   MessageModel({
     required this.messageId,
@@ -13,12 +14,13 @@ class MessageModel {
     required this.text,
     required this.timeStamp,
     required this.readBys,
+    required this.isFile,
   });
 
   @override
   String toString() {
     return 'MessageModel(messageId: $messageId, senderId: $senderId, text: $text, '
-        'timeStamp: $timeStamp, readBys: $readBys)';
+        'timeStamp: $timeStamp, readBys: $readBys, isFile: $isFile)';
   }
 
   Map<String, dynamic> toJson() {
@@ -28,6 +30,7 @@ class MessageModel {
       'text': text,
       'timeStamp': timeStamp.toIso8601String(),
       'readBys': readBys,
+      'isFile': isFile,
     };
   }
 
@@ -42,6 +45,7 @@ class MessageModel {
           : (json['timeStamp'] as Timestamp).toDate())
           : DateTime.now(),
       readBys: List<String>.from(json['readBys'] ?? []),
+      isFile: json['isFile'],
     );
   }
 }

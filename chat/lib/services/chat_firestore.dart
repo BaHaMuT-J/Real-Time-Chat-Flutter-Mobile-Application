@@ -139,6 +139,7 @@ class ChatFirestoreService {
         text: data['text'] as String,
         timeStamp: (data['timeStamp'] as Timestamp).toDate(),
         readBys: List<String>.from(data['readBys'] ?? []),
+        isFile: data['isFile'] as bool,
       );
     }).toList();
 
@@ -159,6 +160,7 @@ class ChatFirestoreService {
       'text': text,
       'timeStamp': FieldValue.serverTimestamp(),
       'readBys': [currentUID],
+      'isFile': false,
     });
 
     debugPrint('Sent message to $chatId: $text');
