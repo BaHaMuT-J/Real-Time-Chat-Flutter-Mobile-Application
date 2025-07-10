@@ -1,10 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ChatModel {
   final String chatId;
   final List<String> users;
   final String? lastMessage;
   final DateTime? lastMessageTimeStamp;
   final String? lastSender;
-  final int unreadCounts;
+  final Map<String, int> unreadCounts;
 
   ChatModel({
     required this.chatId,
@@ -33,14 +35,14 @@ class ChatModel {
     };
   }
 
-  factory ChatModel.fromJson(Map<String, dynamic> json) {
+  factory ChatModel.fromJson(Map<String, dynamic> json, String chatId) {
     return ChatModel(
-      chatId: json['chatId'] as String,
+      chatId: chatId,
       users: List<String>.from(json['users']),
       lastMessage: json['lastMessage'] as String?,
-      lastMessageTimeStamp: json['lastMessageTimeStamp'] as DateTime?,
+      lastMessageTimeStamp: (json['lastMessageTimeStamp'] as Timestamp?)?.toDate(),
       lastSender: json['lastSender'] as String?,
-      unreadCounts: json['unreadCounts'] ?? 0,
+      unreadCounts: Map<String, int>.from(json['unreadCounts'] ?? {}),
     );
   }
 }

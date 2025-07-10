@@ -1,13 +1,15 @@
 import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
+import 'package:chat/services/chat_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:chat/userPref.dart';
 import 'package:flutter/cupertino.dart';
 
-class FirestoreService {
+class UserFirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
 
   Future<void> updateProfile({
     required String email,
@@ -299,6 +301,9 @@ class FirestoreService {
         .set({'friend': currentUserRef});
 
     debugPrint('Add friend in id $senderUid with $currentUid');
+
+    // Create chat between these users
+    _chatFirestoreService.createChat(senderUid);
   }
 
   Future<void> rejectFriendRequest(String senderUid) async {
@@ -398,7 +403,10 @@ class FirestoreService {
         .delete()
         .catchError((e) => debugPrint('No sent request from $friendUID to delete'));
 
-    debugPrint('Completed unfriend cleanup between $currentUid and $friendUID');
+    debugPrint('UserFirestore cleanup between $currentUid and $friendUID');
+
+    // Delete chat between these users
+    _chatFirestoreService.deleteChat(friendUID);
   }
 
 }

@@ -6,7 +6,7 @@ import 'package:chat/components/friend_request_sheet.dart';
 import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/login_page.dart';
-import 'package:chat/services/firestore.dart';
+import 'package:chat/services/user_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:chat/constant.dart';
@@ -22,7 +22,7 @@ class HomeInfoPage extends StatefulWidget {
 
 class _HomeInfoPageState extends State<HomeInfoPage> with WidgetsBindingObserver {
   final _auth = FirebaseAuth.instance;
-  final FirestoreService _firestoreService = FirestoreService();
+  final UserFirestoreService _firestoreService = UserFirestoreService();
 
   String email = '';
   String username = '';

@@ -2,7 +2,7 @@ import 'package:chat/model/user_model.dart';
 import 'package:chat/components/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:chat/constant.dart';
-import 'package:chat/services/firestore.dart';
+import 'package:chat/services/user_firestore.dart';
 
 class AddFriendSheet extends StatefulWidget {
   final VoidCallback onRequestSent;
@@ -84,7 +84,7 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                                     setState(() {
                                       loadingRequests.add(user.uid);
                                     });
-                                    await FirestoreService().sendFriendRequest(user.uid);
+                                    await UserFirestoreService().sendFriendRequest(user.uid);
                                     setState(() {
                                       localSentRequests.add(user.uid);
                                       loadingRequests.remove(user.uid);
@@ -110,7 +110,7 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
     final query = searchController.text.trim().toLowerCase();
     // if (query.isEmpty) return; // Only search with query (not allow search all user)
     setState(() => isLoading = true);
-    final results = await FirestoreService().searchUsers(query);
+    final results = await UserFirestoreService().searchUsers(query);
     searchResults.value = results;
     localSentRequests.clear();
     setState(() => isLoading = false);
