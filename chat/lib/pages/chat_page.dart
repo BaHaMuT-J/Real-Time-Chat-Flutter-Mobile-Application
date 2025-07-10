@@ -1,18 +1,22 @@
+import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/constant.dart';
 import 'package:chat/model/chat_model.dart';
 import 'package:chat/model/message_model.dart';
 import 'package:chat/services/chat_firestore.dart';
+import 'package:chat/services/user_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ChatPage extends StatefulWidget {
   final ChatModel chat;
   final String? chatName;
+  final String? chatImage;
 
   const ChatPage({
     super.key,
     required this.chat,
     this.chatName,
+    this.chatImage,
   });
 
   @override
@@ -20,6 +24,7 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  final UserFirestoreService _userFirestoreService = UserFirestoreService();
   final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String get currentUid => _auth.currentUser!.uid;
@@ -27,6 +32,10 @@ class _ChatPageState extends State<ChatPage> {
   late List<MessageModel> messages;
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+
+  final Map<String, String?> userImageCache = {};
+  final Map<String, String?> userNameCache = {};
+  bool isLoadingUsers = false;
 
   @override
   void initState() {
@@ -52,6 +61,27 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _loadMessages() async {
     final fetchedMessages = await _chatFirestoreService.getMessages(widget.chat.chatId);
+
+    // Only do parallel user fetching for group
+    if (widget.chat.isGroup) {
+      setState(() {
+        isLoadingUsers = true;
+      });
+
+      final uniqueUserIds = fetchedMessages.map((m) => m.senderId).toSet();
+      final futures = uniqueUserIds.map((uid) async {
+        final user = await _userFirestoreService.getUser(uid);
+        userImageCache[uid] = user?.profileImageUrl;
+        userNameCache[uid] = user?.username;
+      });
+
+      await Future.wait(futures);
+
+      setState(() {
+        isLoadingUsers = false;
+      });
+    }
+
     setState(() {
       messages = fetchedMessages;
     });
@@ -117,44 +147,83 @@ class _ChatPageState extends State<ChatPage> {
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final msg = messages[index];
+                itemBuilder: (context, index) {
+                  final msg = messages[index];
 
-                final isMe = msg.senderId == currentUid;
-                final isFirstUnread = (!msg.readBys.contains(currentUid) &&
-                    (index == 0 || messages[index - 1].readBys.contains(currentUid)));
+                  final isMe = msg.senderId == currentUid;
+                  final isFirstUnread = (!msg.readBys.contains(currentUid) &&
+                      (index == 0 || messages[index - 1].readBys.contains(currentUid)));
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (isFirstUnread)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          children: const [
-                            Expanded(child: Divider()),
-                            SizedBox(width: 8),
-                            Text(
-                              "New Messages",
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w600,
+                  // Decide avatar + username
+                  String? avatarUrl;
+                  String? userName;
+                  if (!isMe) {
+                    if (widget.chat.isGroup) {
+                      avatarUrl = userImageCache[msg.senderId];
+                      userName = userNameCache[msg.senderId] ?? "Unknown";
+                    } else {
+                      avatarUrl = widget.chatImage;
+                    }
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (isFirstUnread)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            children: const [
+                              Expanded(child: Divider()),
+                              SizedBox(width: 8),
+                              Text(
+                                "New Messages",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Expanded(child: Divider()),
+                            ],
+                          ),
+                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (!isMe)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Column(
+                                children: [
+                                  ProfileAvatar(imagePath: avatarUrl ?? ""),
+                                  if (widget.chat.isGroup && userName != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Text(
+                                        userName,
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Expanded(child: Divider()),
-                          ],
-                        ),
+                          Expanded(
+                            child: ChatBubble(
+                              text: msg.text,
+                              time: msg.timeStamp,
+                              isMe: isMe,
+                              isRead: msg.readBys.contains(currentUid),
+                            ),
+                          ),
+                        ],
                       ),
-                    ChatBubble(
-                      text: msg.text,
-                      time: msg.timeStamp,
-                      isMe: isMe,
-                      isRead: msg.readBys.contains(currentUid),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                }
             ),
           ),
           SafeArea(
