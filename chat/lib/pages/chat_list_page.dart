@@ -80,7 +80,7 @@ class _ChatListPageState extends State<ChatListPage> {
     Future.wait([
       _loadChats(),
     ]).then((_) {
-      UserPrefs.saveIsLoad(true);
+      UserPrefs.saveIsLoadChat(true);
     });
   }
 

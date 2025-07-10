@@ -29,7 +29,7 @@ class UserFirestoreService {
 
   Future<Map<String, dynamic>?> loadProfile({ bool isPreferPref = true}) async {
     final usernamePref = await UserPrefs.getUsername();
-    final isLoadPref = await UserPrefs.getIsLoad();
+    final isLoadPref = await UserPrefs.getIsLoadUser();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load profile from Pref');
       final emailPref = await UserPrefs.getEmail();
@@ -70,7 +70,7 @@ class UserFirestoreService {
 
   Future<List<UserModel>> loadFriends({ bool isPreferPref = true}) async {
     final friendsListRef = await UserPrefs.getFriendsList();
-    final isLoadPref = await UserPrefs.getIsLoad();
+    final isLoadPref = await UserPrefs.getIsLoadUser();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load friends list from Pref');
       debugPrint('$friendsListRef');
@@ -110,7 +110,7 @@ class UserFirestoreService {
 
   Future<List<SentFriendRequestModel>> getAllSentFriendRequest({ bool isPreferPref = true}) async {
     final sentFriendRequestsListRef = await UserPrefs.getSentFriendRequests();
-    final isLoadPref = await UserPrefs.getIsLoad();
+    final isLoadPref = await UserPrefs.getIsLoadUser();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load sent requests from Pref');
       debugPrint('Sent friend requests (resolved): $sentFriendRequestsListRef');
@@ -147,7 +147,7 @@ class UserFirestoreService {
 
   Future<List<UserModel>> getAllReceivedFriendRequest({ bool isPreferPref = true}) async {
     final receivedFriendRequestsListRef = await UserPrefs.getReceivedFriendRequests();
-    final isLoadPref = await UserPrefs.getIsLoad();
+    final isLoadPref = await UserPrefs.getIsLoadUser();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load received requests from Pref');
       debugPrint('Received friend requests (resolved): $receivedFriendRequestsListRef');

@@ -54,7 +54,7 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     debugPrint("AppLifecycleState changed to $state");
     if (state == AppLifecycleState.paused) {
-      UserPrefs.saveIsLoad(false);
+      UserPrefs.saveIsLoadUser(false);
     } else if (state == AppLifecycleState.resumed) {
       startApp(isPreferPref: false);
     }
@@ -67,9 +67,10 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
       _userFirestoreService.loadFriends(isPreferPref: isPreferPref),
       _userFirestoreService.getAllSentFriendRequest(isPreferPref: isPreferPref),
       _userFirestoreService.getAllReceivedFriendRequest(isPreferPref: isPreferPref),
-      _chatFirestoreService.getChats(),
+      _chatFirestoreService.getChats(isPreferPref: false),
     ]).then((_) {
-      UserPrefs.saveIsLoad(true);
+      UserPrefs.saveIsLoadUser(true);
+      UserPrefs.saveIsLoadChat(true);
       appStateNotifier.refresh();
     });
   }

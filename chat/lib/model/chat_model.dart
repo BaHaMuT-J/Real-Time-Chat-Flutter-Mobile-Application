@@ -35,9 +35,9 @@ class ChatModel {
     };
   }
 
-  factory ChatModel.fromJson(Map<String, dynamic> json, String chatId) {
+  factory ChatModel.fromJson(Map<String, dynamic> json) {
     return ChatModel(
-      chatId: chatId,
+      chatId: json['chatId'],
       users: List<String>.from(json['users']),
       lastMessage: json['lastMessage'] as String?,
       lastMessageTimeStamp: (json['lastMessageTimeStamp'] as Timestamp?)?.toDate(),

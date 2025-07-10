@@ -1,4 +1,5 @@
 import 'package:chat/model/chat_model.dart';
+import 'package:chat/userPref.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -75,6 +76,16 @@ class ChatFirestoreService {
   }
 
   Future<List<ChatModel>> getChats({ isPreferPref = true }) async {
+    final chatsRef = await UserPrefs.getChats();
+    final isLoadPref = await UserPrefs.getIsLoadChat();
+    if (isPreferPref && isLoadPref != null && isLoadPref) {
+      debugPrint('Load chats from Pref');
+      debugPrint('Get chats: $chatsRef');
+      return chatsRef;
+    }
+
+    debugPrint('Load chats from Firestore');
+
     final currentUID = currentUid;
     final userChatsSnap = await _firestore
         .collection('users')
@@ -92,9 +103,11 @@ class ChatFirestoreService {
         .where(FieldPath.documentId, whereIn: chatIds)
         .get();
 
-    final chats = chatsSnap.docs
-        .map((doc) => ChatModel.fromJson(doc.data(), doc.id))
-        .toList();
+    final chats = chatsSnap.docs.map((doc) {
+      final data = doc.data();
+      data['chatId'] = doc.id;
+      return ChatModel.fromJson(data);
+    }).toList();
 
     chats.sort((a, b) {
       final aTime = a.lastMessageTimeStamp ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -103,6 +116,7 @@ class ChatFirestoreService {
     });
 
     debugPrint('Get chats: $chats');
+    UserPrefs.saveChats(chats);
 
     return chats;
   }

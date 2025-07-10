@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:chat/model/chat_model.dart';
 import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -97,14 +98,40 @@ class UserPrefs {
         .toList();
   }
 
-  static Future<void> saveIsLoad(bool isLoad) async {
+  static Future<void> saveChats(List<ChatModel> chats) async {
     final prefs = await UserPrefs._getPrefs();
-    await prefs.setBool('isLoad', isLoad);
+    List<String> chatsList = chats.map((chat) => jsonEncode(chat.toJson())).toList();
+    await prefs.setStringList('chats', chatsList);
   }
 
-  static Future<bool?> getIsLoad() async {
+  static Future<List<ChatModel>> getChats() async {
     final prefs = await UserPrefs._getPrefs();
-    return prefs.getBool('isLoad');
+    List<String>? chatJsonList = prefs.getStringList('chats');
+    if (chatJsonList == null) return [];
+
+    return chatJsonList
+        .map((chatJson) => ChatModel.fromJson(jsonDecode(chatJson)))
+        .toList();
+  }
+
+  static Future<void> saveIsLoadUser(bool isLoad) async {
+    final prefs = await UserPrefs._getPrefs();
+    await prefs.setBool('isLoadUser', isLoad);
+  }
+
+  static Future<bool?> getIsLoadUser() async {
+    final prefs = await UserPrefs._getPrefs();
+    return prefs.getBool('isLoadUser');
+  }
+
+  static Future<void> saveIsLoadChat(bool isLoad) async {
+    final prefs = await UserPrefs._getPrefs();
+    await prefs.setBool('isLoadChat', isLoad);
+  }
+
+  static Future<bool?> getIsLoadChat() async {
+    final prefs = await UserPrefs._getPrefs();
+    return prefs.getBool('isLoadChat');
   }
 
   static Future<void> logout() async {

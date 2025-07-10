@@ -60,7 +60,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
       _loadSentFriendRequests(),
       _loadReceivedFriendRequests(),
     ]).then((_) {
-      UserPrefs.saveIsLoad(true);
+      UserPrefs.saveIsLoadUser(true);
     });
   }
 
