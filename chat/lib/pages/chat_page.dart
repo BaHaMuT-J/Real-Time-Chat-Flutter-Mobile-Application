@@ -44,14 +44,14 @@ class _ChatPageState extends State<ChatPage> {
     messages = [];
 
     _controller.addListener(() {
-      setState(() {}); // Enable / disable send button
+      setState(() {});
     });
+
+    appStateNotifier.addListener(_onAppStateChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadMessages();
       _scrollToFirstUnread();
-
-      // Mark all as read after showing UI with 'New Messages' divider
       await _chatFirestoreService.markAsRead(widget.chat.chatId);
     });
   }
@@ -60,7 +60,15 @@ class _ChatPageState extends State<ChatPage> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    appStateNotifier.removeListener(_onAppStateChanged);
     super.dispose();
+  }
+
+  void _onAppStateChanged() async {
+    debugPrint('On app state changed from chat page');
+    await _loadMessages();
+    _scrollToFirstUnread();
+    await _chatFirestoreService.markAsRead(widget.chat.chatId);
   }
 
   Future<void> _loadMessages() async {
@@ -286,7 +294,6 @@ class _ChatPageState extends State<ChatPage> {
   }
 }
 
-// Chat bubble for MessageModel
 class ChatBubble extends StatelessWidget {
   final String text;
   final DateTime time;

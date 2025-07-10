@@ -3,9 +3,11 @@ import 'package:chat/components/add_friend_sheet.dart';
 import 'package:chat/components/edit_profile_sheet.dart';
 import 'package:chat/components/friend_list.dart';
 import 'package:chat/components/friend_request_sheet.dart';
+import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/login_page.dart';
+import 'package:chat/services/storage.dart';
 import 'package:chat/services/user_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +25,8 @@ class HomeInfoPage extends StatefulWidget {
 class _HomeInfoPageState extends State<HomeInfoPage> {
   final _auth = FirebaseAuth.instance;
   final UserFirestoreService _firestoreService = UserFirestoreService();
+  final StorageService _storageService = StorageService();
+  String get currentUid => _auth.currentUser!.uid;
 
   String email = '';
   String username = '';
@@ -164,22 +168,33 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
         nameController: nameController,
         descController: descController,
         pickedImagePath: pickedImagePath,
+        initialImagePath: profileImageUrl,
         onImagePick: () async {
           final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
           if (picked != null) setState(() => pickedImagePath = picked.path);
+          return picked?.path;
         },
         onSave: () async {
           final newUsername = nameController.text.trim();
           final newDescription = descController.text.trim();
-          final newProfileImageUrl = pickedImagePath ?? '';
-          await _firestoreService.updateProfile(
-            email: email,
-            username: newUsername,
-            description: newDescription,
-            profileImageUrl: newProfileImageUrl,
-          );
+
+          String newProfileImageUrl = profileImageUrl;
+          if (pickedImagePath != null && !pickedImagePath!.startsWith('http')) {
+            final file = File(pickedImagePath!);
+            newProfileImageUrl = await _storageService.uploadProfileImage(file, currentUid);
+          }
+
+          if (newUsername != username || newDescription != description || newProfileImageUrl != profileImageUrl) {
+            await _firestoreService.updateProfile(
+              email: email,
+              username: newUsername,
+              description: newDescription,
+              profileImageUrl: newProfileImageUrl,
+            );
+            await _loadProfile(isPreferPref: false);
+          }
+
           Navigator.pop(context);
-          _loadProfile();
         },
       ),
     );
@@ -282,11 +297,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   }
 
   Widget _profileSection() => Column(children: [
-    CircleAvatar(
-      radius: 50,
-      backgroundImage: profileImageUrl.isNotEmpty ? FileImage(File(profileImageUrl)) : null,
-      child: profileImageUrl.isEmpty ? const Icon(Icons.person, size: 50) : null,
-    ),
+    ProfileAvatar(imagePath: profileImageUrl, radius: 50,),
     const SizedBox(height: 12),
     Text(username, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: strongBlueColor)),
     Text(email, style: const TextStyle(fontSize: 16)),
