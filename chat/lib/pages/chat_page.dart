@@ -36,6 +36,7 @@ class _ChatPageState extends State<ChatPage> {
   final Map<String, String?> userImageCache = {};
   final Map<String, String?> userNameCache = {};
   bool isLoadingUsers = false;
+  bool isSending = false;
 
   @override
   void initState() {
@@ -49,6 +50,9 @@ class _ChatPageState extends State<ChatPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadMessages();
       _scrollToFirstUnread();
+
+      // Mark all as read after showing UI with 'New Messages' divider
+      await _chatFirestoreService.markAsRead(widget.chat.chatId);
     });
   }
 
@@ -104,12 +108,17 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || isSending) return;
+
+    setState(() {
+      isSending = true;
+    });
 
     await _chatFirestoreService.sendMessage(widget.chat.chatId, text);
 
     setState(() {
       _controller.clear();
+      isSending = false;
     });
 
     await _loadMessages();
@@ -253,13 +262,19 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: _controller.text.trim().isEmpty ? null : _sendMessage,
+                    onPressed: (_controller.text.trim().isEmpty || isSending) ? null : _sendMessage,
                     style: ElevatedButton.styleFrom(
                       shape: const CircleBorder(),
                       padding: const EdgeInsets.all(12),
                       foregroundColor: Colors.blue,
                     ),
-                    child: const Icon(Icons.send),
+                    child: isSending
+                        ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                        : const Icon(Icons.send),
                   ),
                 ],
               ),

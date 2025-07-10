@@ -1,6 +1,5 @@
 import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/model/chat_model.dart';
-import 'package:chat/model/message_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/chat_page.dart';
 import 'package:chat/constant.dart';
@@ -217,7 +216,9 @@ class _ChatListPageState extends State<ChatListPage> {
 
         Navigator.push(context, MaterialPageRoute(
           builder: (_) => ChatPage(chat: chat, chatName: name, chatImage: imageUrl,),
-        ));
+        )).then((value) {
+          _loadChats();
+        });
       },
     );
   }

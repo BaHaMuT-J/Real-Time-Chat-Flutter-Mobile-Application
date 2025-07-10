@@ -170,7 +170,6 @@ class ChatFirestoreService {
       'lastMessage': text,
       'lastMessageTimeStamp': FieldValue.serverTimestamp(),
       'lastSender': currentUID,
-      'unreadCounts.$currentUID': 0,
     });
 
     // Increment unread counts for other users
@@ -185,6 +184,41 @@ class ChatFirestoreService {
     }
 
     UserPrefs.saveIsLoadChat(false);
+  }
+
+  Future<void> markAsRead(String chatId) async {
+    final currentUID = currentUid;
+
+    final unreadMessagesSnap = await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('readBys', whereNotIn: [[currentUID]])
+        .get();
+
+    final batch = _firestore.batch();
+
+    for (final doc in unreadMessagesSnap.docs) {
+      final data = doc.data();
+      final readBys = List<String>.from(data['readBys'] ?? []);
+
+      if (!readBys.contains(currentUID)) {
+        final msgRef = doc.reference;
+        batch.update(msgRef, {
+          'readBys': FieldValue.arrayUnion([currentUID]),
+        });
+      }
+    }
+
+    final chatRef = _firestore.collection('chats').doc(chatId);
+    batch.update(chatRef, {
+      'unreadCounts.$currentUID': 0,
+    });
+
+    await batch.commit();
+    UserPrefs.saveIsLoadChat(false);
+
+    debugPrint('Marked all messages in chat $chatId as read by $currentUID');
   }
 
 }
