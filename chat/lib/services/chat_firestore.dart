@@ -147,13 +147,15 @@ class ChatFirestoreService {
     return messages;
   }
 
-  Future<void> sendMessage(String chatId, String text) async {
+  Future<MessageModel> sendMessage(String chatId, String text) async {
     final currentUID = currentUid;
     final messageRef = _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
         .doc();
+
+    final timeNow = DateTime.now();
 
     await messageRef.set({
       'senderId': currentUID,
@@ -184,6 +186,16 @@ class ChatFirestoreService {
     }
 
     UserPrefs.saveIsLoadChat(false);
+
+    // Build MessageModel
+    return MessageModel(
+      messageId: messageRef.id,
+      senderId: currentUID,
+      text: text,
+      timeStamp: timeNow,
+      readBys: [currentUID],
+      isFile: false,
+    );
   }
 
   Future<void> markAsRead(String chatId) async {

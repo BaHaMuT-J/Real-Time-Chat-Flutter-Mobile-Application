@@ -57,12 +57,12 @@ class _ChatPageState extends State<ChatPage> {
       await _chatFirestoreService.markAsRead(widget.chat.chatId);
     });
 
-    socketService.on("message", (data) => _listenToMessage(data));
+    registerSocket();
   }
 
   @override
   void dispose() {
-    socketService.off("message");
+    unregisterSocket();
     _controller.dispose();
     _scrollController.dispose();
     appStateNotifier.removeListener(_onAppStateChanged);
@@ -75,8 +75,20 @@ class _ChatPageState extends State<ChatPage> {
     await _chatFirestoreService.markAsRead(widget.chat.chatId);
   }
 
+  void registerSocket() async {
+    debugPrint('Register currentUid: $currentUid');
+    socketService.emit("register", { "userId": currentUid });
+    socketService.on("message", _listenToMessage);
+  }
+
+  void unregisterSocket() async {
+    debugPrint('Unregister currentUid: $currentUid');
+    socketService.emit("unregister", { "userId": currentUid });
+    socketService.off("message", _listenToMessage);
+  }
+
   void _listenToMessage(data) async {
-    debugPrint('socket message: $data');
+    debugPrint('socket message in $currentUid: $data');
   }
 
   Future<void> _loadMessages() async {
@@ -139,7 +151,15 @@ class _ChatPageState extends State<ChatPage> {
       isSending = true;
     });
 
-    await _chatFirestoreService.sendMessage(widget.chat.chatId, text);
+    MessageModel message = await _chatFirestoreService.sendMessage(widget.chat.chatId, text);
+    for (String uid in widget.chat.users) {
+      if (uid == currentUid) continue;
+      socketService.emit("message", {
+        'userId': uid,
+        'message': message,
+      });
+      debugPrint('Sent message to socket with uid $uid');
+    }
 
     setState(() {
       _controller.clear();
@@ -178,9 +198,9 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           Expanded(
             child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: messages.length,
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                itemCount: messages.length,
                 itemBuilder: (context, index) {
                   final msg = messages[index];
                   final isMe = msg.senderId == currentUid;

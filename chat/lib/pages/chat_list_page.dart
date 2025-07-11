@@ -212,8 +212,6 @@ class _ChatListPageState extends State<ChatListPage> {
         ],
       ),
       onTap: () async {
-        debugPrint('Tapped on chat: $chatId');
-
         Navigator.push(context, MaterialPageRoute(
           builder: (_) => ChatPage(chat: chat, chatName: name, chatImage: imageUrl,),
         )).then((value) {

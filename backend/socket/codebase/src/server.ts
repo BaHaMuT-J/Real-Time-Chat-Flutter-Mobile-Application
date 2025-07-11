@@ -72,11 +72,41 @@ const start = async () => {
       console.log(`Unregistered user ${userId}`);
     });
 
-    socket.on("message", async (data) => {
-      console.log("socket listen to message");
-      console.log(data);
-      socket.emit("message", data);
-    });
+    socket.on(
+      "message",
+      async ({ userId, data }: { userId: string; data: object }) => {
+        console.log(`Socket listen to message with userId: ${userId}`);
+        console.log(data);
+
+        const recipientSocketId = await getSocketId(userId.toString());
+        if (recipientSocketId) {
+          io.to(recipientSocketId).emit("message", data);
+          console.log(
+            `Message sent to user ${userId} with socket ${recipientSocketId}`
+          );
+        } else {
+          console.log(`No socket found for user ${userId}`);
+        }
+      }
+    );
+
+    socket.on(
+      "read",
+      async ({ userId, data }: { userId: string; data: object }) => {
+        console.log(`Socket listen to read with userId: ${userId}`);
+        console.log(data);
+
+        const recipientSocketId = await getSocketId(userId.toString());
+        if (recipientSocketId) {
+          io.to(recipientSocketId).emit("read", data);
+          console.log(
+            `Read sent to user ${userId} with socket ${recipientSocketId}`
+          );
+        } else {
+          console.log(`No socket found for user ${userId}`);
+        }
+      }
+    );
 
     socket.on("disconnect", async () => {
       console.log(`User disconnected: ${socket.id}`);

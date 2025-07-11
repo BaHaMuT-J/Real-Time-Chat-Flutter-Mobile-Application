@@ -7,7 +7,8 @@ class SocketService {
 
   factory SocketService() => _instance;
 
-  final isRunning = true; // dummy for testing, check if socket server is running
+  // final isTesting = true; // dummy for testing, check if socket server is running
+  final isTesting = false;
 
   SocketService._internal() {
     _init();
@@ -17,8 +18,7 @@ class SocketService {
 
   void _init() {
     final String server = dotenv.env['SOCKET_URL']!;
-    debugPrint('Socket server url: $server');
-    if (isRunning) return;
+    if (isTesting) return;
     socket = IO.io(
       server,
       IO.OptionBuilder()
@@ -30,7 +30,7 @@ class SocketService {
 
   void connect() {
     debugPrint('Socket connect');
-    if (isRunning) return;
+    if (isTesting) return;
     socket.connect();
     socket.onConnect((_) {
       debugPrint('Connected to socket server');
@@ -43,22 +43,22 @@ class SocketService {
 
   void disconnect() {
     debugPrint('Socket disconnect');
-    if (isRunning) return;
+    if (isTesting) return;
     socket.disconnect();
   }
 
   void emit(String event, dynamic data) {
-    if (isRunning) return;
+    if (isTesting) return;
     socket.emit(event, data);
   }
 
   void on(String event, Function(dynamic) callback) {
-    if (isRunning) return;
+    if (isTesting) return;
     socket.on(event, callback);
   }
 
   void off(String event, [Function(dynamic)? callback]) {
-    if (isRunning) return;
+    if (isTesting) return;
     socket.off(event, callback);
   }
 }
