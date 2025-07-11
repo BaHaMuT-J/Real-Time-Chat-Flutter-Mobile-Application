@@ -22,8 +22,6 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('Profile Avatar imagePath: ${widget.imagePath}');
-
     if (isLocalFile) {
       final file = File(widget.imagePath);
       return FutureBuilder<bool>(

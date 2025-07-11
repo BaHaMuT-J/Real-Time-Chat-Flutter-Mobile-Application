@@ -51,7 +51,6 @@ class _ChatPageState extends State<ChatPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadMessages();
-      _scrollToFirstUnread();
       await _chatFirestoreService.markAsRead(widget.chat.chatId);
     });
   }
@@ -67,14 +66,12 @@ class _ChatPageState extends State<ChatPage> {
   void _onAppStateChanged() async {
     debugPrint('On app state changed from chat page');
     await _loadMessages();
-    _scrollToFirstUnread();
     await _chatFirestoreService.markAsRead(widget.chat.chatId);
   }
 
   Future<void> _loadMessages() async {
     final fetchedMessages = await _chatFirestoreService.getMessages(widget.chat.chatId);
 
-    // Only do parallel user fetching for group
     if (widget.chat.isGroup) {
       setState(() {
         isLoadingUsers = true;
@@ -97,6 +94,10 @@ class _ChatPageState extends State<ChatPage> {
     setState(() {
       messages = fetchedMessages;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToFirstUnread();
+    });
   }
 
   void _scrollToFirstUnread() {
@@ -108,7 +109,13 @@ class _ChatPageState extends State<ChatPage> {
 
       _scrollController.animateTo(
         offset,
-        duration: const Duration(milliseconds: 500),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    } else if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
