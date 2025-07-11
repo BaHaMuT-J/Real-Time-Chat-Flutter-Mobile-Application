@@ -2,14 +2,17 @@ import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/pages/main_page.dart';
 import 'package:chat/services/chat_firestore.dart';
+import 'package:chat/services/socket.dart';
 import 'package:chat/services/user_firestore.dart';
 import 'package:chat/userPref.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load();
   await Firebase.initializeApp();
   runApp(const MyApp());
 }
@@ -37,15 +40,18 @@ class InitialPage extends StatefulWidget {
 class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
   final UserFirestoreService _userFirestoreService = UserFirestoreService();
   final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
+  final socketService = SocketService();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    socketService.connect();
   }
 
   @override
   void dispose() {
+    socketService.disconnect();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

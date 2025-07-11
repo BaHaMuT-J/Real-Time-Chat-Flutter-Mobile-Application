@@ -1,8 +1,10 @@
+import 'package:chat/components/chat_bubble.dart';
 import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/constant.dart';
 import 'package:chat/model/chat_model.dart';
 import 'package:chat/model/message_model.dart';
 import 'package:chat/services/chat_firestore.dart';
+import 'package:chat/services/socket.dart';
 import 'package:chat/services/user_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +30,7 @@ class _ChatPageState extends State<ChatPage> {
   final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String get currentUid => _auth.currentUser!.uid;
+  final socketService = SocketService();
 
   late List<MessageModel> messages;
   final TextEditingController _controller = TextEditingController();
@@ -53,10 +56,13 @@ class _ChatPageState extends State<ChatPage> {
       await _loadMessages();
       await _chatFirestoreService.markAsRead(widget.chat.chatId);
     });
+
+    socketService.on("message", (data) => _listenToMessage(data));
   }
 
   @override
   void dispose() {
+    socketService.off("message");
     _controller.dispose();
     _scrollController.dispose();
     appStateNotifier.removeListener(_onAppStateChanged);
@@ -67,6 +73,10 @@ class _ChatPageState extends State<ChatPage> {
     debugPrint('On app state changed from chat page');
     await _loadMessages();
     await _chatFirestoreService.markAsRead(widget.chat.chatId);
+  }
+
+  void _listenToMessage(data) async {
+    debugPrint('socket message: $data');
   }
 
   Future<void> _loadMessages() async {
@@ -173,12 +183,26 @@ class _ChatPageState extends State<ChatPage> {
               itemCount: messages.length,
                 itemBuilder: (context, index) {
                   final msg = messages[index];
-
                   final isMe = msg.senderId == currentUid;
                   final isFirstUnread = (!msg.readBys.contains(currentUid) &&
                       (index == 0 || messages[index - 1].readBys.contains(currentUid)));
 
-                  // Decide avatar + username
+                  // For group: calculate how many OTHER users have read
+                  int readByCount = 0;
+                  if (isMe && widget.chat.isGroup) {
+                    readByCount = msg.readBys.length;
+                    if (msg.readBys.contains(currentUid)) {
+                      readByCount -= 1; // exclude self
+                    }
+                  }
+
+                  // For private: check if OTHER user have read
+                  bool isOtherRead = false;
+                  if (isMe && !widget.chat.isGroup) {
+                    isOtherRead = msg.readBys.length > 1;
+                  }
+
+                  // Avatar + username
                   String? avatarUrl;
                   String? userName;
                   if (!isMe) {
@@ -240,7 +264,9 @@ class _ChatPageState extends State<ChatPage> {
                               text: msg.text,
                               time: msg.timeStamp,
                               isMe: isMe,
-                              isRead: msg.readBys.contains(currentUid),
+                              isGroup: widget.chat.isGroup,
+                              isRead: isOtherRead,
+                              readByCount: readByCount,
                             ),
                           ),
                         ],
@@ -294,81 +320,6 @@ class _ChatPageState extends State<ChatPage> {
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ChatBubble extends StatelessWidget {
-  final String text;
-  final DateTime time;
-  final bool isMe;
-  final bool isRead;
-
-  const ChatBubble({
-    super.key,
-    required this.text,
-    required this.time,
-    required this.isMe,
-    required this.isRead,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final align = isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final color = isMe ? Colors.blueAccent : Colors.white;
-    final textColor = isMe ? Colors.white : Colors.black87;
-    final radius = isMe
-        ? const BorderRadius.only(
-      topLeft: Radius.circular(16),
-      topRight: Radius.circular(0),
-      bottomLeft: Radius.circular(16),
-      bottomRight: Radius.circular(16),
-    )
-        : const BorderRadius.only(
-      topLeft: Radius.circular(0),
-      topRight: Radius.circular(16),
-      bottomLeft: Radius.circular(16),
-      bottomRight: Radius.circular(16),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: align,
-        children: [
-          Container(
-            constraints:
-            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: radius,
-            ),
-            child: Text(
-              text,
-              style: TextStyle(color: textColor),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                formatTime(time),
-                style: const TextStyle(fontSize: 10, color: Colors.grey),
-              ),
-              if (isMe) ...[
-                const SizedBox(width: 4),
-                Icon(
-                  isRead ? Icons.check : null,
-                  size: 14,
-                  color: isRead ? Colors.blue : Colors.grey,
-                ),
-              ],
-            ],
           ),
         ],
       ),

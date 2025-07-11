@@ -16,7 +16,6 @@ services:
       - chat-user-facing
       - chat-back-office
     environment:
-      BACKEND_URL: http://backend:8080
       IP: "*"
       REDIS_IP: redis
       REDIS_PORT: 6379

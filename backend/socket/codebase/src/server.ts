@@ -72,6 +72,12 @@ const start = async () => {
       console.log(`Unregistered user ${userId}`);
     });
 
+    socket.on("message", async (data) => {
+      console.log("socket listen to message");
+      console.log(data);
+      socket.emit("message", data);
+    });
+
     socket.on("disconnect", async () => {
       console.log(`User disconnected: ${socket.id}`);
 

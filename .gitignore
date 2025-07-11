@@ -49,6 +49,7 @@ docker/.env
 
 # Flutter
 chat/android/app/google-services.json
+chat/.env
 
 # Backend
 backend/socket/codebase/node_modules/
