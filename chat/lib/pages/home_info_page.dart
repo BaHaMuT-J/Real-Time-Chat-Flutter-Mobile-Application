@@ -7,6 +7,7 @@ import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/login_page.dart';
+import 'package:chat/services/firebase_message.dart';
 import 'package:chat/services/storage.dart';
 import 'package:chat/services/user_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -47,6 +48,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   @override
   void dispose() {
+    debugPrint('Dispose from Home Info page');
     appStateNotifier.removeListener(_onAppStateChanged);
     super.dispose();
   }
@@ -137,6 +139,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
     try {
       await _auth.signOut();
       await UserPrefs.logout();
+      await FirebaseMessagingService.dispose();
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,

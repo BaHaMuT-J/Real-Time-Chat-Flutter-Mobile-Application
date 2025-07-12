@@ -5,6 +5,8 @@ import 'package:chat/pages/chat_page.dart';
 import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/services/chat_firestore.dart';
+import 'package:chat/services/firebase_message.dart';
+import 'package:chat/services/socket.dart';
 import 'package:chat/services/user_firestore.dart';
 import 'package:chat/userPref.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,8 +23,9 @@ class _ChatListPageState extends State<ChatListPage> {
   late final FirebaseAuth _auth = FirebaseAuth.instance;
   final UserFirestoreService _userFirestoreService = UserFirestoreService();
   final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
+  String get currentUid => _auth.currentUser!.uid;
+  final socketService = SocketService();
 
-  String? currentUid;
   List<ChatModel>? allChats;
 
   @override
@@ -30,24 +33,35 @@ class _ChatListPageState extends State<ChatListPage> {
     super.initState();
     appStateNotifier.addListener(_onAppStateChanged);
     startApp();
+    registerSocket(socketService, currentUid);
+    socketService.on("message", _listenToMessage);
   }
 
   @override
   void dispose() {
+    debugPrint("Dispose from Chat list page");
+    // When dispose after logout, this will have error
+    try {
+      unregisterSocket(socketService, currentUid);
+      socketService.off("message", _listenToMessage);
+    } catch (e) {
+      debugPrint('Unregister socket error from Chat list page: $e');
+    }
     appStateNotifier.removeListener(_onAppStateChanged);
     super.dispose();
   }
 
   void _onAppStateChanged() {
-    debugPrint('On app state changed from chat list page');
+    debugPrint('On app state changed from Chat list page');
     startApp();
+  }
+
+  void _listenToMessage(data) async {
+    debugPrint('Chat list socket message in $currentUid: $data');
   }
 
   void startApp() {
     debugPrint('Start app from chat list page');
-    setState(() {
-      currentUid = _auth.currentUser?.uid;
-    });
     Future.wait([
       _loadChats(),
     ]).then((_) {
@@ -72,8 +86,10 @@ class _ChatListPageState extends State<ChatListPage> {
 
   Future<void> _handleLogOut() async {
     try {
+      socketService.disconnect();
       await _auth.signOut();
       await UserPrefs.logout();
+      await FirebaseMessagingService.dispose();
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
@@ -212,11 +228,11 @@ class _ChatListPageState extends State<ChatListPage> {
         ],
       ),
       onTap: () async {
-        Navigator.push(context, MaterialPageRoute(
+        socketService.off("message", _listenToMessage);        Navigator.push(context, MaterialPageRoute(
           builder: (_) => ChatPage(chat: chat, chatName: name, chatImage: imageUrl,),
         )).then((value) {
           _loadChats();
-        });
+          socketService.on("message", _listenToMessage);        });
       },
     );
   }

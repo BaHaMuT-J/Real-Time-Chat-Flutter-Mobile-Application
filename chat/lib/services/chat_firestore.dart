@@ -28,13 +28,13 @@ class ChatFirestoreService {
       'chatImageUrl': null,
     });
 
-    debugPrint('Create chat $chatId');
+    // debugPrint('Create chat $chatId');
 
     await _firestore.collection('users').doc(currentUID).collection('chats').doc(chatId).set({});
-    debugPrint('Create chatRef in $currentUID successfully');
+    // debugPrint('Create chatRef in $currentUID successfully');
 
     await _firestore.collection('users').doc(friendUID).collection('chats').doc(chatId).set({});
-    debugPrint('Create chatRef in $friendUID successfully');
+    // debugPrint('Create chatRef in $friendUID successfully');
 
     return chatId;
   }
@@ -59,22 +59,22 @@ class ChatFirestoreService {
         // Delete chat references under both users
         await _firestore.collection('users').doc(currentUID).collection('chats').doc(chatId).delete();
 
-        debugPrint('Delete chatRef in $currentUID successfully');
+        // debugPrint('Delete chatRef in $currentUID successfully');
 
         await _firestore.collection('users').doc(friendUID).collection('chats').doc(chatId).delete();
 
-        debugPrint('Delete chatRef in $friendUID successfully');
+        // debugPrint('Delete chatRef in $friendUID successfully');
 
         // Delete chat document
         await _firestore.collection('chats').doc(chatId).delete();
 
-        debugPrint('Delete chat $chatId');
+        // debugPrint('Delete chat $chatId');
 
         return;
       }
     }
 
-    debugPrint("No chat found between $currentUID and $friendUID");
+    // debugPrint("No chat found between $currentUID and $friendUID");
   }
 
   Future<List<ChatModel>> getChats({ isPreferPref = true }) async {
@@ -82,7 +82,7 @@ class ChatFirestoreService {
     final isLoadPref = await UserPrefs.getIsLoadChat();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load chats from Pref');
-      debugPrint('Get chats: $chatsRef');
+      // debugPrint('Get chats: $chatsRef');
       return chatsRef;
     }
 
@@ -97,7 +97,7 @@ class ChatFirestoreService {
 
     final chatIds = userChatsSnap.docs.map((d) => d.id).toList();
 
-    debugPrint('Get chatIds: $chatIds');
+    // debugPrint('Get chatIds: $chatIds');
     if (chatIds.isEmpty) return [];
 
     final chatsSnap = await _firestore
@@ -117,7 +117,7 @@ class ChatFirestoreService {
       return bTime.compareTo(aTime);
     });
 
-    debugPrint('Get chats: $chats');
+    // debugPrint('Get chats: $chats');
     UserPrefs.saveChats(chats);
 
     return chats;
@@ -143,7 +143,7 @@ class ChatFirestoreService {
       );
     }).toList();
 
-    debugPrint('Fetched messages for chat $chatId : $messages');
+    // debugPrint('Fetched messages for chat $chatId : $messages');
     return messages;
   }
 

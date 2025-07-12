@@ -2,11 +2,13 @@ import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/pages/main_page.dart';
 import 'package:chat/services/chat_firestore.dart';
+import 'package:chat/services/firebase_message.dart';
 import 'package:chat/services/socket.dart';
 import 'package:chat/services/user_firestore.dart';
 import 'package:chat/userPref.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -23,6 +25,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       home: const InitialPage(),
     );
   }
@@ -46,12 +49,11 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    socketService.connect();
   }
 
   @override
   void dispose() {
-    socketService.disconnect();
+    debugPrint('Dispose from Init page');
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -82,13 +84,22 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
   }
 
   Future<Widget> decideStartPage() async {
+    RemoteMessage? initialMessage = await FirebaseMessagingService.getInitialMessage();
+
+    if (initialMessage != null) {
+      debugPrint('App opened from terminated state via notification');
+      debugPrint('initialMessage: $initialMessage');
+    }
+
     final email = await UserPrefs.getEmail();
     final password = await UserPrefs.getPassword();
 
     if (email != null && password != null) {
       try {
         await InitialPage._auth.signInWithEmailAndPassword(email: email, password: password);
+        socketService.connect();
         startApp(isPreferPref: false);
+        await FirebaseMessagingService.initialize();
         return const MainPage();
       } on FirebaseAuthException catch (e) {
         debugPrint('Login failed: ${e.message}');

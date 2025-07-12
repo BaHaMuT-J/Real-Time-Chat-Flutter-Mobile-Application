@@ -24,6 +24,7 @@
     "@socket.io/redis-adapter": "^8.3.0",
     "axios": "^1.9.0",
     "express": "^5.1.0",
+    "firebase-admin": "^13.4.0",
     "redis": "^5.5.6",
     "socket.io": "^4.8.1"
   }

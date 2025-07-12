@@ -12,6 +12,7 @@ COPY codebase/tsconfig.json ./
 RUN pnpm install
 
 COPY codebase/src ./src
+COPY codebase/asset ./asset
 
 RUN pnpm run build
 
@@ -20,6 +21,7 @@ FROM node:22
 WORKDIR /app
 
 # Copy built code and dependencies from builder
+COPY --from=builder /app/asset ./asset
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 

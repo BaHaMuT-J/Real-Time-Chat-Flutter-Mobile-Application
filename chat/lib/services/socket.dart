@@ -49,16 +49,19 @@ class SocketService {
 
   void emit(String event, dynamic data) {
     if (isTesting) return;
+    debugPrint('Socket emit to event: $event with data: $data');
     socket.emit(event, data);
   }
 
   void on(String event, Function(dynamic) callback) {
     if (isTesting) return;
+    debugPrint('Socket on event: $event');
     socket.on(event, callback);
   }
 
   void off(String event, [Function(dynamic)? callback]) {
     if (isTesting) return;
+    debugPrint('Socket off event: $event');
     socket.off(event, callback);
   }
 }

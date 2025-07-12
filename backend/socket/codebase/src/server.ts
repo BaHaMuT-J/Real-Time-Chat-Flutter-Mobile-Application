@@ -2,9 +2,11 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { createClient } from "redis";
 import { createAdapter } from "@socket.io/redis-adapter";
-import express from "express";
+import express, { Request, Response } from "express";
+import { sendNotificationMessage } from "./firebase";
 
 const app = express();
+app.use(express.json());
 const server = createServer(app);
 
 const io = new Server(server, {
@@ -36,6 +38,7 @@ const redis = createClient({
 redis.connect().catch(console.error);
 
 const userKey = (userId: string) => `socket:user:${userId}`;
+const tokenFCM = (userId: string) => `fcm:token:${userId}`;
 
 async function registerUser(userId: string, socketId: string) {
   await redis.set(userKey(userId), socketId);
@@ -47,6 +50,18 @@ async function unregisterUser(userId: string) {
 
 async function getSocketId(userId: string): Promise<string | null> {
   return await redis.get(userKey(userId));
+}
+
+async function registerTokenFCM(userId: string, token: string) {
+  await redis.set(tokenFCM(userId), token);
+}
+
+async function unregisterTokenFCM(userId: string) {
+  await redis.del(tokenFCM(userId));
+}
+
+async function getTokenFCM(userId: string): Promise<string | null> {
+  return await redis.get(tokenFCM(userId));
 }
 
 const start = async () => {
@@ -78,7 +93,7 @@ const start = async () => {
         console.log(`Socket listen to message with userId: ${userId}`);
         console.log(data);
 
-        const recipientSocketId = await getSocketId(userId.toString());
+        const recipientSocketId = await getSocketId(userId);
         if (recipientSocketId) {
           io.to(recipientSocketId).emit("message", data);
           console.log(
@@ -86,6 +101,13 @@ const start = async () => {
           );
         } else {
           console.log(`No socket found for user ${userId}`);
+        }
+
+        const tokenFCM = await getTokenFCM(userId);
+        if (tokenFCM) {
+          sendNotificationMessage(tokenFCM, `socket title`, `socket body`);
+        } else {
+          console.log(`No FCM token found for user ${userId}`);
         }
       }
     );
@@ -120,6 +142,23 @@ const start = async () => {
         }
       }
     });
+  });
+
+  app.post("/api/fcm/set", async (req: Request, res: Response) => {
+    console.log("/api/fcm/set: ", req.body);
+    const { userId, tokenFCM } = req.body;
+
+    await registerTokenFCM(userId, tokenFCM);
+    const tokenFromRedis = await getTokenFCM(userId);
+    console.log(`Registered user ${userId} to token ${tokenFromRedis}`);
+  });
+
+  app.post("/api/fcm/unset", async (req: Request, res: Response) => {
+    console.log("/api/fcm/unset: ", req.body);
+    const { userId } = req.body;
+
+    await unregisterTokenFCM(userId);
+    console.log(`Unregistered user ${userId} for FCM token`);
   });
 
   server.listen(port, () => {

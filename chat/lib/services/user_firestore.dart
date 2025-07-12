@@ -18,7 +18,7 @@ class UserFirestoreService {
         final data = docSnap.data()!;
         data['uid'] = uid;
         final user = UserModel.fromJson(data);
-        debugPrint('Get user: $user');
+        // debugPrint('Get user: $user');
         return user;
       } else {
         debugPrint('User $uid not found');
@@ -92,7 +92,7 @@ class UserFirestoreService {
     final isLoadPref = await UserPrefs.getIsLoadUser();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load friends list from Pref');
-      debugPrint('$friendsListRef');
+      // debugPrint('Friends list: $friendsListRef');
       return friendsListRef;
     }
 
@@ -123,7 +123,7 @@ class UserFirestoreService {
 
     UserPrefs.saveFriendsList(friendUsers);
 
-    debugPrint('friends lists: $friendUsers');
+    // debugPrint('Friends list: $friendUsers');
     return friendUsers;
   }
 
@@ -132,7 +132,7 @@ class UserFirestoreService {
     final isLoadPref = await UserPrefs.getIsLoadUser();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load sent requests from Pref');
-      debugPrint('Sent friend requests (resolved): $sentFriendRequestsListRef');
+      // debugPrint('Sent friend requests (resolved): $sentFriendRequestsListRef');
       return sentFriendRequestsListRef;
     }
 
@@ -160,7 +160,7 @@ class UserFirestoreService {
     }
 
     UserPrefs.saveSentFriendRequests(requests);
-    debugPrint('Sent friend requests (resolved): $requests');
+    // debugPrint('Sent friend requests (resolved): $requests');
     return requests;
   }
 
@@ -169,7 +169,7 @@ class UserFirestoreService {
     final isLoadPref = await UserPrefs.getIsLoadUser();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load received requests from Pref');
-      debugPrint('Received friend requests (resolved): $receivedFriendRequestsListRef');
+      // debugPrint('Received friend requests (resolved): $receivedFriendRequestsListRef');
       return receivedFriendRequestsListRef;
     }
 
@@ -197,7 +197,7 @@ class UserFirestoreService {
     }
 
     UserPrefs.saveReceivedFriendRequests(requests);
-    debugPrint('Received friend requests (resolved): $requests');
+    // debugPrint('Received friend requests (resolved): $requests');
     return requests;
   }
 
@@ -217,7 +217,7 @@ class UserFirestoreService {
           'status': 'Pending...',
         });
 
-    debugPrint('Create sent request in $currentUid');
+    // debugPrint('Create sent request in $currentUid');
 
     await _firestore
         .collection('users')
@@ -228,7 +228,7 @@ class UserFirestoreService {
           'user': currentUserRef,
         });
 
-    debugPrint('Create received request in $receiverUid');
+    // debugPrint('Create received request in $receiverUid');
   }
 
   Future<List<UserModel>> searchUsers(String keyword) async {
@@ -279,7 +279,7 @@ class UserFirestoreService {
       results.add(UserModel.fromJson(data));
     }
 
-    debugPrint('Search results for "$keyword": ${results.map((u) => u.username)}');
+    // debugPrint('Search results for "$keyword": ${results.map((u) => u.username)}');
     return results;
   }
 
@@ -293,7 +293,7 @@ class UserFirestoreService {
         .doc(currentUid)
         .update({'status': 'Accepted'});
 
-    debugPrint('Update sent request in id $senderUid to Accepted');
+    // debugPrint('Update sent request in id $senderUid to Accepted');
 
     await _firestore
         .collection('users')
@@ -302,7 +302,7 @@ class UserFirestoreService {
         .doc(senderUid)
         .delete();
 
-    debugPrint('Delete received request in id $currentUid');
+    // debugPrint('Delete received request in id $currentUid');
 
     final currentUserRef = _firestore.collection('users').doc(currentUid);
     final senderUserRef = _firestore.collection('users').doc(senderUid);
@@ -312,14 +312,14 @@ class UserFirestoreService {
         .doc(senderUid)
         .set({'friend': senderUserRef});
 
-    debugPrint('Add friend in id $currentUid with $senderUid');
+    // debugPrint('Add friend in id $currentUid with $senderUid');
 
     await _firestore.collection('users').doc(senderUid)
         .collection('friends')
         .doc(currentUid)
         .set({'friend': currentUserRef});
 
-    debugPrint('Add friend in id $senderUid with $currentUid');
+    // debugPrint('Add friend in id $senderUid with $currentUid');
 
     // Create chat between these users
     await UserPrefs.saveIsLoadChat(false);
@@ -329,8 +329,6 @@ class UserFirestoreService {
   Future<void> rejectFriendRequest(String senderUid) async {
     final currentUid = _auth.currentUser!.uid;
 
-    debugPrint('Try to reject request from $senderUid tp $currentUid');
-
     await _firestore
         .collection('users')
         .doc(senderUid)
@@ -338,7 +336,7 @@ class UserFirestoreService {
         .doc(currentUid)
         .update({'status': 'Rejected'});
 
-    debugPrint('Update sent request in id $senderUid to Rejected');
+    // debugPrint('Update sent request in id $senderUid to Rejected');
 
     await _firestore
         .collection('users')
@@ -347,7 +345,7 @@ class UserFirestoreService {
         .doc(senderUid)
         .delete();
 
-    debugPrint('Delete received request in id $currentUid');
+    // debugPrint('Delete received request in id $currentUid');
   }
 
   Future<void> cancelSentRequest(String receiverUid) async {
@@ -360,7 +358,7 @@ class UserFirestoreService {
         .doc(receiverUid)
         .delete();
 
-    debugPrint('Delete sent request in id $currentUid');
+    // debugPrint('Delete sent request in id $currentUid');
 
     await _firestore
         .collection('users')
@@ -369,7 +367,7 @@ class UserFirestoreService {
         .doc(currentUid)
         .delete();
 
-    debugPrint('Delete received request in id $receiverUid');
+    // debugPrint('Delete received request in id $receiverUid');
   }
 
   Future<void> closeSentRequest(String receiverUid) async {
@@ -382,7 +380,7 @@ class UserFirestoreService {
         .doc(receiverUid)
         .delete();
 
-    debugPrint('Deleted sent request in id $currentUid to $receiverUid');
+    // debugPrint('Deleted sent request in id $currentUid to $receiverUid');
   }
 
   Future<void> unfriend(String friendUID) async {
@@ -395,7 +393,7 @@ class UserFirestoreService {
         .doc(currentUid)
         .delete();
 
-    debugPrint('Deleted friend $currentUid from $friendUID friends list');
+    // debugPrint('Deleted friend $currentUid from $friendUID friends list');
 
     await _firestore
         .collection('users')
@@ -404,7 +402,7 @@ class UserFirestoreService {
         .doc(friendUID)
         .delete();
 
-    debugPrint('Deleted friend $friendUID from $currentUid friends list');
+    // debugPrint('Deleted friend $friendUID from $currentUid friends list');
 
     // Clean up any leftover sent friend requests
     await _firestore
@@ -423,7 +421,7 @@ class UserFirestoreService {
         .delete()
         .catchError((e) => debugPrint('No sent request from $friendUID to delete'));
 
-    debugPrint('UserFirestore cleanup between $currentUid and $friendUID');
+    // debugPrint('UserFirestore cleanup between $currentUid and $friendUID');
 
     // Delete chat between these users
     await UserPrefs.saveIsLoadChat(false);

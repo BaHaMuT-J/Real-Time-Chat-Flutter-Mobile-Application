@@ -57,12 +57,13 @@ class _ChatPageState extends State<ChatPage> {
       await _chatFirestoreService.markAsRead(widget.chat.chatId);
     });
 
-    registerSocket();
+    registerSocket(socketService, currentUid);
+    socketService.on("message", _listenToMessage);
   }
 
   @override
   void dispose() {
-    unregisterSocket();
+    socketService.off("message", _listenToMessage);
     _controller.dispose();
     _scrollController.dispose();
     appStateNotifier.removeListener(_onAppStateChanged);
@@ -70,25 +71,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _onAppStateChanged() async {
-    debugPrint('On app state changed from chat page');
+    debugPrint('On app state changed from Chat page');
     await _loadMessages();
     await _chatFirestoreService.markAsRead(widget.chat.chatId);
   }
 
-  void registerSocket() async {
-    debugPrint('Register currentUid: $currentUid');
-    socketService.emit("register", { "userId": currentUid });
-    socketService.on("message", _listenToMessage);
-  }
-
-  void unregisterSocket() async {
-    debugPrint('Unregister currentUid: $currentUid');
-    socketService.emit("unregister", { "userId": currentUid });
-    socketService.off("message", _listenToMessage);
-  }
-
   void _listenToMessage(data) async {
-    debugPrint('socket message in $currentUid: $data');
+    debugPrint('Chat page socket message in $currentUid: $data');
   }
 
   Future<void> _loadMessages() async {
@@ -156,7 +145,7 @@ class _ChatPageState extends State<ChatPage> {
       if (uid == currentUid) continue;
       socketService.emit("message", {
         'userId': uid,
-        'message': message,
+        'data': message,
       });
       debugPrint('Sent message to socket with uid $uid');
     }

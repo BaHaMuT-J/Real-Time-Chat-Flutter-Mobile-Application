@@ -53,3 +53,4 @@ chat/.env
 
 # Backend
 backend/socket/codebase/node_modules/
+backend/socket/codebase/asset/serviceAccountKey.json

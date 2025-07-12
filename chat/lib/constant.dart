@@ -1,4 +1,7 @@
+import 'package:chat/services/socket.dart';
 import 'package:flutter/material.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 const strongBlueColor = Color(0xFF003285);
 const weakBlueColor = Color(0xFF578FCA);
@@ -14,6 +17,7 @@ String formatTime(DateTime time) {
   }
 }
 
+// For notify app state change in each page
 class AppStateNotifier extends ValueNotifier<bool> {
   AppStateNotifier() : super(false);
 
@@ -24,23 +28,14 @@ class AppStateNotifier extends ValueNotifier<bool> {
 
 final appStateNotifier = AppStateNotifier();
 
-class Chat {
-  final String name;
-  final List<Message> messages;
-
-  Chat({required this.name, required this.messages});
+// Register current user to socket in chat list and chat page
+void registerSocket(SocketService socketService, String currentUid) async {
+  debugPrint('Register currentUid: $currentUid');
+  socketService.emit("register", { "userId": currentUid });
 }
 
-class Message {
-  final String text;
-  final bool isMe;
-  final DateTime time;
-  bool isRead;
-
-  Message({
-    required this.text,
-    required this.isMe,
-    required this.time,
-    this.isRead = false,
-  });
+// Unregister current user to socket in chat list and chat page
+void unregisterSocket(SocketService socketService, String currentUid) async {
+  debugPrint('Unregister currentUid: $currentUid');
+  socketService.emit("unregister", { "userId": currentUid });
 }
