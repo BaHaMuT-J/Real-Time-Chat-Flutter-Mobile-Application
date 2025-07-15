@@ -198,7 +198,53 @@ class ChatFirestoreService {
     );
   }
 
-  Future<void> markAsRead(String chatId) async {
+  Future<void> markAsRead(String chatId, String messageId) async {
+    final currentUID = currentUid;
+
+    final messageRef = _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId);
+
+    final messageSnap = await messageRef.get();
+    if (!messageSnap.exists) {
+      debugPrint('Message $messageId does not exist in chat $chatId');
+      return;
+    }
+
+    final data = messageSnap.data();
+    final readBys = List<String>.from(data?['readBys'] ?? []);
+
+    if (!readBys.contains(currentUID)) {
+      final batch = _firestore.batch();
+      batch.update(messageRef, {
+        'readBys': FieldValue.arrayUnion([currentUID]),
+      });
+
+      // safely decrement unreadCounts
+      final chatRef = _firestore.collection('chats').doc(chatId);
+      final chatSnap = await chatRef.get();
+      final chatData = chatSnap.data();
+      final unreadCounts = Map<String, dynamic>.from(chatData?['unreadCounts'] ?? {});
+      final currentCount = (unreadCounts[currentUID] ?? 0) as int;
+
+      if (currentCount > 0) {
+        batch.update(chatRef, {
+          'unreadCounts.$currentUID': FieldValue.increment(-1),
+        });
+      }
+
+      await batch.commit();
+      debugPrint('Marked message $messageId in chat $chatId as read by $currentUID');
+    } else {
+      debugPrint('Message $messageId in chat $chatId already marked as read by $currentUID');
+    }
+
+    UserPrefs.saveIsLoadChat(false);
+  }
+
+  Future<void> markAsReadAll(String chatId) async {
     final currentUID = currentUid;
 
     final unreadMessagesSnap = await _firestore

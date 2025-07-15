@@ -54,15 +54,19 @@ class _ChatPageState extends State<ChatPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadMessages();
-      await _chatFirestoreService.markAsRead(widget.chat.chatId);
+      await _markAsReadAll();
     });
 
     registerSocket(socketService, currentUid);
     socketService.on("message", _listenToMessage);
+    socketService.on("read", _listenToRead);
+    socketService.on("allRead", _listenToAllRead);
   }
 
   @override
   void dispose() {
+    socketService.off("allRead", _listenToAllRead);
+    socketService.off("read", _listenToRead);
     socketService.off("message", _listenToMessage);
     _controller.dispose();
     _scrollController.dispose();
@@ -73,11 +77,62 @@ class _ChatPageState extends State<ChatPage> {
   void _onAppStateChanged() async {
     debugPrint('On app state changed from Chat page');
     await _loadMessages();
-    await _chatFirestoreService.markAsRead(widget.chat.chatId);
+    await _markAsReadAll();
   }
 
+
+  // data = {
+  //         'userId': uid,
+  //         'chatId': widget.chat.chatId,
+  //         'message': message,
+  //       }
   void _listenToMessage(data) async {
     debugPrint('Chat page socket message in $currentUid: $data');
+    final currentChatUid = widget.chat.chatId;
+    if (data['chatId'] == currentChatUid) {
+      debugPrint('Try to update messages');
+      final newMessage = MessageModel.fromJson(data['message']);
+      setState(() {
+        messages = [...messages, newMessage];
+      });
+      await _chatFirestoreService.markAsRead(currentChatUid, newMessage.messageId);
+      for (String uid in widget.chat.users) {
+        if (uid == currentUid) continue;
+        socketService.emit('read', {
+          'userId': uid,
+          'chatId': currentChatUid,
+          'messageId': newMessage.messageId,
+        });
+        debugPrint('Sent read to socket with uid $uid');
+      }
+    } else {
+      debugPrint('Try to create local notification');
+    }
+  }
+
+  // data = {
+  //         'userId': currentUid,
+  //         'chatId': currentChatUid,
+  //         'messageId': newMessage.messageId,
+  //       }
+  void _listenToRead(data) async {
+    debugPrint('Chat page socket read in $currentUid: $data');
+    final currentChatUid = widget.chat.chatId;
+    if (data['chatId'] == currentChatUid) {
+      debugPrint('Try to mark message as read');
+    }
+  }
+
+  // data = {
+  //         'userId': currentUid,
+  //         'chatId': currentChatUid,
+  //       }
+  void _listenToAllRead(data) async {
+    debugPrint('Chat page socket all read in $currentUid: $data');
+    final currentChatUid = widget.chat.chatId;
+    if (data['chatId'] == currentChatUid) {
+      debugPrint('Try to mark all messages as read');
+    }
   }
 
   Future<void> _loadMessages() async {
@@ -132,6 +187,18 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _markAsReadAll() async {
+    await _chatFirestoreService.markAsReadAll(widget.chat.chatId);
+    for (String uid in widget.chat.users) {
+      if (uid == currentUid) continue;
+      socketService.emit('allRead', {
+        'userId': uid,
+        'chatId': widget.chat.chatId,
+      });
+      debugPrint('Sent allRead to socket with uid $uid');
+    }
+  }
+
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty || isSending) return;
@@ -145,7 +212,8 @@ class _ChatPageState extends State<ChatPage> {
       if (uid == currentUid) continue;
       socketService.emit("message", {
         'userId': uid,
-        'data': message,
+        'chatId': widget.chat.chatId,
+        'message': message,
       });
       debugPrint('Sent message to socket with uid $uid');
     }

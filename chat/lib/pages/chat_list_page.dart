@@ -86,10 +86,11 @@ class _ChatListPageState extends State<ChatListPage> {
 
   Future<void> _handleLogOut() async {
     try {
+      String uid = currentUid;
       socketService.disconnect();
       await _auth.signOut();
       await UserPrefs.logout();
-      await FirebaseMessagingService.dispose();
+      await FirebaseMessagingService.dispose(uid: uid);
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,

@@ -132,13 +132,41 @@ class FirebaseMessagingService {
   }
 
   /// Cancel listener
-  static Future<void> dispose() async {
+  static Future<void> dispose({ String? uid }) async {
     await _onMessageSub?.cancel();
     await _onMessageOpenedAppSub?.cancel();
     await _onTokenRefreshSub?.cancel();
     debugPrint("🧹 FirebaseMessaging listeners cancelled");
 
     // Also delete token to stop receiving pushes
+    if (uid != null) {
+      debugPrint("Unregister token to server with uid: $uid");
+      if (isTesting) return;
+      final backendUrl = dotenv.env['BACKEND_URL']!;
+      final url = '$backendUrl/api/fcm/unset';
+      debugPrint('Unregister token to url: $url');
+      try {
+        final response = await http.post(
+          Uri.parse(url),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: jsonEncode({
+            "userId": uid,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          debugPrint("FCM token unregistered successfully");
+        } else {
+          debugPrint("Failed to unregister token. Status: ${response.statusCode}");
+          debugPrint("Response: ${response.body}");
+        }
+      } catch (e) {
+        debugPrint("Error occurred while unregistering token: $e");
+      }
+    }
+
     await _firebaseMessaging.deleteToken();
     debugPrint("🚫 FCM token deleted");
   }

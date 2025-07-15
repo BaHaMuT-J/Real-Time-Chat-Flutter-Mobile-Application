@@ -137,9 +137,10 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   Future<void> _handleLogOut() async {
     try {
+      String uid = currentUid;
       await _auth.signOut();
       await UserPrefs.logout();
-      await FirebaseMessagingService.dispose();
+      await FirebaseMessagingService.dispose(uid: uid);
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,

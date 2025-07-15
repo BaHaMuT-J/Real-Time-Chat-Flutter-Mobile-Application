@@ -87,48 +87,57 @@ const start = async () => {
       console.log(`Unregistered user ${userId}`);
     });
 
-    socket.on(
-      "message",
-      async ({ userId, data }: { userId: string; data: object }) => {
-        console.log(`Socket listen to message with userId: ${userId}`);
-        console.log(data);
+    socket.on("message", async (data: MessageChat) => {
+      console.log(`Socket listen to message with userId: ${data.userId}`);
+      console.log(data);
 
-        const recipientSocketId = await getSocketId(userId);
-        if (recipientSocketId) {
-          io.to(recipientSocketId).emit("message", data);
-          console.log(
-            `Message sent to user ${userId} with socket ${recipientSocketId}`
-          );
-        } else {
-          console.log(`No socket found for user ${userId}`);
-        }
-
-        const tokenFCM = await getTokenFCM(userId);
-        if (tokenFCM) {
-          sendNotificationMessage(tokenFCM, `socket title`, `socket body`);
-        } else {
-          console.log(`No FCM token found for user ${userId}`);
-        }
+      const recipientSocketId = await getSocketId(data.userId);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("message", data);
+        console.log(
+          `Message sent to user ${data.userId} with socket ${recipientSocketId}`
+        );
+      } else {
+        console.log(`No socket found for user ${data.userId}`);
       }
-    );
 
-    socket.on(
-      "read",
-      async ({ userId, data }: { userId: string; data: object }) => {
-        console.log(`Socket listen to read with userId: ${userId}`);
-        console.log(data);
-
-        const recipientSocketId = await getSocketId(userId.toString());
-        if (recipientSocketId) {
-          io.to(recipientSocketId).emit("read", data);
-          console.log(
-            `Read sent to user ${userId} with socket ${recipientSocketId}`
-          );
-        } else {
-          console.log(`No socket found for user ${userId}`);
-        }
+      const tokenFCM = await getTokenFCM(data.userId);
+      if (tokenFCM) {
+        sendNotificationMessage(tokenFCM, `socket title`, `socket body`);
+      } else {
+        console.log(`No FCM token found for user ${data.userId}`);
       }
-    );
+    });
+
+    socket.on("read", async (data: ReadMessage) => {
+      console.log(`Socket listen to read with userId: ${data.userId}`);
+      console.log(data);
+
+      const recipientSocketId = await getSocketId(data.userId);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("read", data);
+        console.log(
+          `Read sent to user ${data.userId} with socket ${recipientSocketId}`
+        );
+      } else {
+        console.log(`No socket found for user ${data.userId}`);
+      }
+    });
+
+    socket.on("allRead", async (data: AllReadMessage) => {
+      console.log(`Socket listen to allRead with userId: ${data.userId}`);
+      console.log(data);
+
+      const recipientSocketId = await getSocketId(data.userId);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("allRead", data);
+        console.log(
+          `All Read sent to user ${data.userId} with socket ${recipientSocketId}`
+        );
+      } else {
+        console.log(`No socket found for user ${data.userId}`);
+      }
+    });
 
     socket.on("disconnect", async () => {
       console.log(`User disconnected: ${socket.id}`);
@@ -151,6 +160,8 @@ const start = async () => {
     await registerTokenFCM(userId, tokenFCM);
     const tokenFromRedis = await getTokenFCM(userId);
     console.log(`Registered user ${userId} to token ${tokenFromRedis}`);
+
+    res.status(200).send("Registered token successfully.");
   });
 
   app.post("/api/fcm/unset", async (req: Request, res: Response) => {
@@ -159,6 +170,8 @@ const start = async () => {
 
     await unregisterTokenFCM(userId);
     console.log(`Unregistered user ${userId} for FCM token`);
+
+    res.status(200).send("Unregistered token successfully.");
   });
 
   server.listen(port, () => {
