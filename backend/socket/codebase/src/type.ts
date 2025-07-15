@@ -7,10 +7,12 @@ interface MessageChat {
 interface ReadMessage {
   userId: string;
   chatId: string;
+  readerId: string;
   message: object;
 }
 
 interface AllReadMessage {
   userId: string;
   chatId: string;
+  readerId: string;
 }

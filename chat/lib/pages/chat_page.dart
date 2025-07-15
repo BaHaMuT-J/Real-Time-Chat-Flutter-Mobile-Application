@@ -80,7 +80,6 @@ class _ChatPageState extends State<ChatPage> {
     await _markAsReadAll();
   }
 
-
   // data = {
   //         'userId': uid,
   //         'chatId': widget.chat.chatId,
@@ -101,37 +100,56 @@ class _ChatPageState extends State<ChatPage> {
         socketService.emit('read', {
           'userId': uid,
           'chatId': currentChatUid,
+          'readerId': currentUid,
           'messageId': newMessage.messageId,
         });
-        debugPrint('Sent read to socket with uid $uid');
       }
     } else {
       debugPrint('Try to create local notification');
     }
   }
 
-  // data = {
-  //         'userId': currentUid,
-  //         'chatId': currentChatUid,
-  //         'messageId': newMessage.messageId,
-  //       }
   void _listenToRead(data) async {
-    debugPrint('Chat page socket read in $currentUid: $data');
     final currentChatUid = widget.chat.chatId;
     if (data['chatId'] == currentChatUid) {
-      debugPrint('Try to mark message as read');
-    }
+      final readerId = data['readerId'];
+      final messageId = data['messageId'];
+      setState(() {
+        messages = messages.map((msg) {
+          if (msg.messageId == messageId && !msg.readBys.contains(readerId)) {
+            return MessageModel(
+              messageId: msg.messageId,
+              senderId: msg.senderId,
+              text: msg.text,
+              timeStamp: msg.timeStamp,
+              readBys: [...msg.readBys, readerId],
+              isFile: msg.isFile,
+            );
+          }
+          return msg;
+        }).toList();
+      });}
   }
 
-  // data = {
-  //         'userId': currentUid,
-  //         'chatId': currentChatUid,
-  //       }
   void _listenToAllRead(data) async {
-    debugPrint('Chat page socket all read in $currentUid: $data');
     final currentChatUid = widget.chat.chatId;
     if (data['chatId'] == currentChatUid) {
-      debugPrint('Try to mark all messages as read');
+      final readerId = data['readerId'];
+      setState(() {
+        messages = messages.map((msg) {
+          if (!msg.readBys.contains(readerId)) {
+            return MessageModel(
+              messageId: msg.messageId,
+              senderId: msg.senderId,
+              text: msg.text,
+              timeStamp: msg.timeStamp,
+              readBys: [...msg.readBys, readerId],
+              isFile: msg.isFile,
+            );
+          }
+          return msg;
+        }).toList();
+      });
     }
   }
 
@@ -194,8 +212,8 @@ class _ChatPageState extends State<ChatPage> {
       socketService.emit('allRead', {
         'userId': uid,
         'chatId': widget.chat.chatId,
+        'readerId': currentUid,
       });
-      debugPrint('Sent allRead to socket with uid $uid');
     }
   }
 
@@ -208,22 +226,12 @@ class _ChatPageState extends State<ChatPage> {
     });
 
     MessageModel message = await _chatFirestoreService.sendMessage(widget.chat.chatId, text);
-    for (String uid in widget.chat.users) {
-      if (uid == currentUid) continue;
-      socketService.emit("message", {
-        'userId': uid,
-        'chatId': widget.chat.chatId,
-        'message': message,
-      });
-      debugPrint('Sent message to socket with uid $uid');
-    }
 
     setState(() {
       _controller.clear();
       isSending = false;
+      messages = [...messages, message];
     });
-
-    await _loadMessages();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -234,6 +242,15 @@ class _ChatPageState extends State<ChatPage> {
         );
       }
     });
+
+    for (String uid in widget.chat.users) {
+      if (uid == currentUid) continue;
+      socketService.emit("message", {
+        'userId': uid,
+        'chatId': widget.chat.chatId,
+        'message': message,
+      });
+    }
   }
 
   @override
