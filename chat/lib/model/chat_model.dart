@@ -3,10 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ChatModel {
   final String chatId;
   final List<String> users;
-  final String? lastMessage;
-  final DateTime? lastMessageTimeStamp;
-  final String? lastSender;
-  final Map<String, int> unreadCounts;
+  String? lastMessage;
+  DateTime? lastMessageTimeStamp;
+  Map<String, int> unreadCounts;
   final bool isGroup;
   final String? chatName;
   final String? chatImageUrl;
@@ -16,7 +15,6 @@ class ChatModel {
     required this.users,
     required this.lastMessage,
     required this.lastMessageTimeStamp,
-    required this.lastSender,
     required this.unreadCounts,
     required this.isGroup,
     required this.chatName,
@@ -26,7 +24,7 @@ class ChatModel {
   @override
   String toString() {
     return 'ChatModel(chatId: $chatId, users: $users, lastMessage: $lastMessage, '
-        'lastMessageTimeStamp: $lastMessageTimeStamp, lastSender: $lastSender, '
+        'lastMessageTimeStamp: $lastMessageTimeStamp,'
         'unreadCounts: $unreadCounts, isGroup: $isGroup, '
         'chatName: $chatName, chatImageUrl: $chatImageUrl)';
   }
@@ -37,7 +35,6 @@ class ChatModel {
       'users': users,
       'lastMessage': lastMessage,
       'lastMessageTimeStamp': lastMessageTimeStamp?.toIso8601String(),
-      'lastSender': lastSender,
       'unreadCounts': unreadCounts,
       'isGroup': isGroup,
       'chatName': chatName,
@@ -55,7 +52,6 @@ class ChatModel {
           ? DateTime.parse(json['lastMessageTimeStamp'])
           : (json['lastMessageTimeStamp'] as Timestamp).toDate())
           : null,
-      lastSender: json['lastSender'] as String?,
       unreadCounts: Map<String, int>.from(json['unreadCounts'] ?? {}),
       isGroup: json['isGroup'] as bool? ?? false,
       chatName: json['chatName'] as String?,

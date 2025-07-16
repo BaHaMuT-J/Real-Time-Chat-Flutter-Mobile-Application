@@ -1,5 +1,6 @@
 import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/model/chat_model.dart';
+import 'package:chat/model/message_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/chat_page.dart';
 import 'package:chat/constant.dart';
@@ -27,6 +28,7 @@ class _ChatListPageState extends State<ChatListPage> {
   final socketService = SocketService();
 
   List<ChatModel>? allChats;
+  final Map<String, UserModel?> friendCache = {};
 
   @override
   void initState() {
@@ -39,7 +41,6 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   void dispose() {
-    debugPrint("Dispose from Chat list page");
     // When dispose after logout, this will have error
     try {
       unregisterSocket(socketService, currentUid);
@@ -56,8 +57,39 @@ class _ChatListPageState extends State<ChatListPage> {
     startApp();
   }
 
+  // data = {
+  //         'userId': uid,
+  //         'chatId': widget.chat.chatId,
+  //         'message': message,
+  //       }
   void _listenToMessage(data) async {
-    debugPrint('Chat list socket message in $currentUid: $data');
+    try {
+      debugPrint('Chat list socket message in $currentUid: $data');
+      final chatId = data['chatId'] as String;
+      final message = MessageModel.fromJson(data['message']);
+      setState(() {
+        final chatIndex = allChats?.indexWhere((chat) => chat.chatId == chatId);
+        if (chatIndex != null && chatIndex >= 0) {
+          // Update the existing chat
+          final chat = allChats![chatIndex];
+
+          chat.lastMessage = message.text;
+          chat.lastMessageTimeStamp = message.timeStamp;
+
+          // Increase unread count for this user
+          chat.unreadCounts[currentUid] = (chat.unreadCounts[currentUid] ?? 0) + 1;
+
+          // Move this chat to the top
+          allChats!.removeAt(chatIndex);
+          allChats!.insert(0, chat);
+        } else {
+          debugPrint('Chat not found in list, optionally reload chats');
+          // _loadChats();
+        }
+      });
+    } catch (e) {
+      debugPrint('Error handling incoming socket message: $e');
+    }
   }
 
   void startApp() {
@@ -151,30 +183,43 @@ class _ChatListPageState extends State<ChatListPage> {
           } else {
             // PRIVATE CHAT: load friend info
             final friendUid = chat.users.firstWhere((u) => u != currentUid);
+            UserModel? friend = friendCache[friendUid];
+            if (friend != null) {
+              return _buildChatTile(
+                chat: chat,
+                chatId: chat.chatId,
+                name: friend.username,
+                imageUrl: friend.profileImageUrl,
+                lastMessage: chat.lastMessage,
+                lastMessageTimeStamp: chat.lastMessageTimeStamp,
+                unreadCount: unreadCount,
+              );
+            } else {
+              return FutureBuilder<UserModel?>(
+                future: _userFirestoreService.getUser(friendUid),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const ListTile(title: Text("Loading..."));
+                  }
+                  if (!snapshot.hasData || snapshot.data == null) {
+                    return const ListTile(title: Text("Unknown User"));
+                  }
 
-            return FutureBuilder<UserModel?>(
-              future: _userFirestoreService.getUser(friendUid),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const ListTile(title: Text("Loading..."));
-                }
-                if (!snapshot.hasData || snapshot.data == null) {
-                  return const ListTile(title: Text("Unknown User"));
-                }
+                  final friend = snapshot.data!;
+                  friendCache[friendUid] = friend;
 
-                final friend = snapshot.data!;
-
-                return _buildChatTile(
-                  chat: chat,
-                  chatId: chat.chatId,
-                  name: friend.username,
-                  imageUrl: friend.profileImageUrl,
-                  lastMessage: chat.lastMessage,
-                  lastMessageTimeStamp: chat.lastMessageTimeStamp,
-                  unreadCount: unreadCount,
-                );
-              },
-            );
+                  return _buildChatTile(
+                    chat: chat,
+                    chatId: chat.chatId,
+                    name: friend.username,
+                    imageUrl: friend.profileImageUrl,
+                    lastMessage: chat.lastMessage,
+                    lastMessageTimeStamp: chat.lastMessageTimeStamp,
+                    unreadCount: unreadCount,
+                  );
+                },
+              );
+            }
           }
         },
       ),

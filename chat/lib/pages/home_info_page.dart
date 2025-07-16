@@ -8,6 +8,7 @@ import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/services/firebase_message.dart';
+import 'package:chat/services/socket.dart';
 import 'package:chat/services/storage.dart';
 import 'package:chat/services/user_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -138,6 +139,8 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   Future<void> _handleLogOut() async {
     try {
       String uid = currentUid;
+      final socketService = SocketService();
+      socketService.disconnect();
       await _auth.signOut();
       await UserPrefs.logout();
       await FirebaseMessagingService.dispose(uid: uid);

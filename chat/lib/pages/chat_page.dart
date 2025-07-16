@@ -80,11 +80,6 @@ class _ChatPageState extends State<ChatPage> {
     await _markAsReadAll();
   }
 
-  // data = {
-  //         'userId': uid,
-  //         'chatId': widget.chat.chatId,
-  //         'message': message,
-  //       }
   void _listenToMessage(data) async {
     debugPrint('Chat page socket message in $currentUid: $data');
     final currentChatUid = widget.chat.chatId;
