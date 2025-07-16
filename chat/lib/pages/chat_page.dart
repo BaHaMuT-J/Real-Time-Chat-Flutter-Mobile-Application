@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:chat/components/chat_bubble.dart';
 import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/constant.dart';
@@ -12,13 +14,11 @@ import 'package:flutter/material.dart';
 class ChatPage extends StatefulWidget {
   final ChatModel chat;
   final String? chatName;
-  final String? chatImage;
 
   const ChatPage({
     super.key,
     required this.chat,
     this.chatName,
-    this.chatImage,
   });
 
   @override
@@ -83,9 +83,9 @@ class _ChatPageState extends State<ChatPage> {
   void _listenToMessage(data) async {
     debugPrint('Chat page socket message in $currentUid: $data');
     final currentChatUid = widget.chat.chatId;
+    final newMessage = MessageModel.fromJson(jsonDecode(data['message']));
     if (data['chatId'] == currentChatUid) {
       debugPrint('Try to update messages');
-      final newMessage = MessageModel.fromJson(data['message']);
       setState(() {
         messages = [...messages, newMessage];
       });
@@ -243,7 +243,9 @@ class _ChatPageState extends State<ChatPage> {
       socketService.emit("message", {
         'userId': uid,
         'chatId': widget.chat.chatId,
-        'message': message,
+        'chat': jsonEncode(widget.chat.toJson()),
+        'chatName': widget.chatName,
+        'message': jsonEncode(message.toJson()),
       });
     }
   }
@@ -295,12 +297,8 @@ class _ChatPageState extends State<ChatPage> {
                   String? avatarUrl;
                   String? userName;
                   if (!isMe) {
-                    if (widget.chat.isGroup) {
-                      avatarUrl = userImageCache[msg.senderId];
-                      userName = userNameCache[msg.senderId] ?? "Unknown";
-                    } else {
-                      avatarUrl = widget.chatImage;
-                    }
+                    avatarUrl = userImageCache[msg.senderId];
+                    userName = userNameCache[msg.senderId] ?? "Unknown";
                   }
 
                   return Column(

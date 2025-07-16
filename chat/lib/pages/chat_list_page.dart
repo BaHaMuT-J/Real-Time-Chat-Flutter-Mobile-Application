@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/model/chat_model.dart';
 import 'package:chat/model/message_model.dart';
@@ -7,6 +9,7 @@ import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/services/chat_firestore.dart';
 import 'package:chat/services/firebase_message.dart';
+import 'package:chat/services/local_notification.dart';
 import 'package:chat/services/socket.dart';
 import 'package:chat/services/user_firestore.dart';
 import 'package:chat/userPref.dart';
@@ -41,6 +44,7 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   void dispose() {
+    debugPrint('Dispose from Chat list page');
     // When dispose after logout, this will have error
     try {
       unregisterSocket(socketService, currentUid);
@@ -60,33 +64,41 @@ class _ChatListPageState extends State<ChatListPage> {
   // data = {
   //         'userId': uid,
   //         'chatId': widget.chat.chatId,
-  //         'message': message,
+  //         'chat': jsonEncode(widget.chat.toJson()),
+  //         'chatName': widget.chatName,
+  //         'message': jsonEncode(message.toJson()),
   //       }
   void _listenToMessage(data) async {
     try {
       debugPrint('Chat list socket message in $currentUid: $data');
       final chatId = data['chatId'] as String;
-      final message = MessageModel.fromJson(data['message']);
-      setState(() {
-        final chatIndex = allChats?.indexWhere((chat) => chat.chatId == chatId);
-        if (chatIndex != null && chatIndex >= 0) {
-          // Update the existing chat
-          final chat = allChats![chatIndex];
-
+      final message = MessageModel.fromJson(jsonDecode(data['message']));
+      final chatIndex = allChats?.indexWhere((chat) => chat.chatId == chatId);
+      if (chatIndex != null && chatIndex >= 0) {
+        final chat = allChats![chatIndex];
+        setState(() {
+          // Update chat
           chat.lastMessage = message.text;
           chat.lastMessageTimeStamp = message.timeStamp;
-
-          // Increase unread count for this user
           chat.unreadCounts[currentUid] = (chat.unreadCounts[currentUid] ?? 0) + 1;
 
           // Move this chat to the top
           allChats!.removeAt(chatIndex);
           allChats!.insert(0, chat);
-        } else {
-          debugPrint('Chat not found in list, optionally reload chats');
-          // _loadChats();
-        }
-      });
+        });
+
+        // Show local notification
+        final friend = friendCache[message.senderId] ?? await _userFirestoreService.getUser(message.senderId);
+        final notificationTitle = data['chatName'];
+        final notificationBody = friend != null ? '${friend.username} send a new message' : 'New message';
+        LocalNotificationService.showCustomNotification(
+          title: notificationTitle!,
+          body: notificationBody,
+          payload: jsonEncode(data),
+        );
+      } else {
+        debugPrint('Chat not found in list');
+      }
     } catch (e) {
       debugPrint('Error handling incoming socket message: $e');
     }
@@ -274,11 +286,13 @@ class _ChatListPageState extends State<ChatListPage> {
         ],
       ),
       onTap: () async {
-        socketService.off("message", _listenToMessage);        Navigator.push(context, MaterialPageRoute(
-          builder: (_) => ChatPage(chat: chat, chatName: name, chatImage: imageUrl,),
+        socketService.off("message", _listenToMessage);
+        Navigator.push(context, MaterialPageRoute(
+          builder: (_) => ChatPage(chat: chat, chatName: name),
         )).then((value) {
           _loadChats();
-          socketService.on("message", _listenToMessage);        });
+          socketService.on("message", _listenToMessage);
+        });
       },
     );
   }

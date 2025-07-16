@@ -1,13 +1,15 @@
 interface MessageChat {
   userId: string;
   chatId: string;
-  message: object;
+  message: string;
 }
 
 interface ReadMessage {
   userId: string;
   chatId: string;
   readerId: string;
+  chat: object;
+  chatName: string;
   message: object;
 }
 

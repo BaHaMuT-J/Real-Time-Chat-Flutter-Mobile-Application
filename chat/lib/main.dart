@@ -1,10 +1,9 @@
 import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/pages/main_page.dart';
-import 'package:chat/services/chat_firestore.dart';
 import 'package:chat/services/firebase_message.dart';
+import 'package:chat/services/local_notification.dart';
 import 'package:chat/services/socket.dart';
-import 'package:chat/services/user_firestore.dart';
 import 'package:chat/userPref.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -16,6 +15,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
   await Firebase.initializeApp();
+  LocalNotificationService.initialize();
   runApp(const MyApp());
 }
 
@@ -41,8 +41,6 @@ class InitialPage extends StatefulWidget {
 }
 
 class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
-  final UserFirestoreService _userFirestoreService = UserFirestoreService();
-  final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
   final socketService = SocketService();
 
   @override
@@ -63,6 +61,7 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
     debugPrint("AppLifecycleState changed to $state");
     if (state == AppLifecycleState.paused) {
       UserPrefs.saveIsLoadUser(false);
+      UserPrefs.saveIsLoadChat(false);
     } else if (state == AppLifecycleState.resumed) {
       startApp(isPreferPref: false);
     }
@@ -70,17 +69,9 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
 
   void startApp({ isPreferPref = true}) {
     debugPrint('Start app from main.dart');
-    Future.wait([
-      _userFirestoreService.loadProfile(isPreferPref: isPreferPref),
-      _userFirestoreService.loadFriends(isPreferPref: isPreferPref),
-      _userFirestoreService.getAllSentFriendRequest(isPreferPref: isPreferPref),
-      _userFirestoreService.getAllReceivedFriendRequest(isPreferPref: isPreferPref),
-      _chatFirestoreService.getChats(isPreferPref: false),
-    ]).then((_) {
-      UserPrefs.saveIsLoadUser(true);
-      UserPrefs.saveIsLoadChat(true);
-      appStateNotifier.refresh();
-    });
+    UserPrefs.saveIsLoadUser(false);
+    UserPrefs.saveIsLoadChat(false);
+    appStateNotifier.refresh();
   }
 
   Future<Widget> decideStartPage() async {
