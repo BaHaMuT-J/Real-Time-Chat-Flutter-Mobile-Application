@@ -123,6 +123,30 @@ class ChatFirestoreService {
     return chats;
   }
 
+  Future<ChatModel?> getChatById(String chatId) async {
+    try {
+      final doc = await _firestore.collection('chats').doc(chatId).get();
+      if (!doc.exists) return null;
+
+      final data = doc.data()!;
+      return ChatModel(
+        chatId: doc.id,
+        users: List<String>.from(data['users'] ?? []),
+        isGroup: data['isGroup'] ?? false,
+        chatName: data['chatName'],
+        chatImageUrl: data['chatImageUrl'],
+        lastMessage: data['lastMessage'],
+        lastMessageTimeStamp: data['lastMessageTimeStamp'] != null
+            ? (data['lastMessageTimeStamp'] as Timestamp).toDate()
+            : null,
+        unreadCounts: Map<String, int>.from(data['unreadCounts'] ?? {}),
+      );
+    } catch (e) {
+      debugPrint('Error fetching chat by ID: $e');
+      return null;
+    }
+  }
+
   Future<List<MessageModel>> getMessages(String chatId) async {
     final messagesSnap = await _firestore
         .collection('chats')

@@ -32,8 +32,9 @@ class MyApp extends StatelessWidget {
 }
 
 class InitialPage extends StatefulWidget {
-  const InitialPage({super.key});
+  const InitialPage({super.key, this.payload});
 
+  final dynamic payload;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
@@ -51,7 +52,6 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    debugPrint('Dispose from Init page');
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -59,15 +59,15 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     debugPrint("AppLifecycleState changed to $state");
-    if (state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       UserPrefs.saveIsLoadUser(false);
       UserPrefs.saveIsLoadChat(false);
     } else if (state == AppLifecycleState.resumed) {
-      startApp(isPreferPref: false);
+      setNotLoadFromPref();
     }
   }
 
-  void startApp({ isPreferPref = true}) {
+  void setNotLoadFromPref() {
     debugPrint('Start app from main.dart');
     UserPrefs.saveIsLoadUser(false);
     UserPrefs.saveIsLoadChat(false);
@@ -89,9 +89,9 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
       try {
         await InitialPage._auth.signInWithEmailAndPassword(email: email, password: password);
         socketService.connect();
-        startApp(isPreferPref: false);
+        setNotLoadFromPref();
         await FirebaseMessagingService.initialize();
-        return const MainPage();
+        return MainPage(payload: widget.payload);
       } on FirebaseAuthException catch (e) {
         debugPrint('Login failed: ${e.message}');
         return const LoginPage();

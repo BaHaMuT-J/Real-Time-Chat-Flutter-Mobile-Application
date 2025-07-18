@@ -2,9 +2,6 @@ import 'dart:convert';
 
 import 'package:chat/constant.dart';
 import 'package:chat/main.dart';
-import 'package:chat/model/chat_model.dart';
-import 'package:chat/model/message_model.dart';
-import 'package:chat/pages/chat_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -18,28 +15,13 @@ class LocalNotificationService {
       onDidReceiveNotificationResponse: (details) {
         debugPrint('📲 Local notification tapped. Payload: ${details.payload}');
 
-        // If you store JSON here, you can decode it and handle specific navigation.
         final data = details.payload != null ? jsonDecode(details.payload!) : null;
         debugPrint('data: $data');
 
         navigatorKey.currentState?.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const InitialPage()),
+          MaterialPageRoute(builder: (_) => InitialPage(payload: data)),
               (route) => false,
         );
-
-        if (data != null) {
-          final message = MessageModel.fromJson(jsonDecode(data['message']));
-          debugPrint('message: $message');
-          final chat = ChatModel.fromJson(jsonDecode(data['chat']));
-          debugPrint('chat: $chat');
-          String name = data['chatName'];
-          debugPrint('name: $name');
-          navigatorKey.currentState?.push(
-              MaterialPageRoute(
-                  builder: (_) => ChatPage(chat: chat, chatName: name)
-              )
-          );
-        }
       },
     );
   }

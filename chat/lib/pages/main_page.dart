@@ -4,7 +4,9 @@ import 'package:chat/pages/home_info_page.dart';
 import 'package:chat/constant.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  const MainPage({super.key, this.payload});
+
+  final dynamic payload;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -12,15 +14,34 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 1;
-  final _pages = [
-    HomeInfoPage(),
-    ChatListPage(),
-  ];
+  List<StatefulWidget>? _pages;
+  dynamic _pendingPayload;
+
+  @override
+  void initState() {
+    super.initState();
+    _pendingPayload = widget.payload;
+
+    _pages = [
+      const HomeInfoPage(),
+      ChatListPage(payload: _pendingPayload),
+    ];
+
+    if (_pendingPayload != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _pendingPayload = null;
+          _pages![1] = const ChatListPage();
+        });
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: _pages?[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         backgroundColor: lightBlueColor,

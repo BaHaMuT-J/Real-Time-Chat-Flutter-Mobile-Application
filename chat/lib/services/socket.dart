@@ -1,14 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SocketService {
+  late final FirebaseAuth _auth = FirebaseAuth.instance;
+  String get currentUid => _auth.currentUser!.uid;
+
   static final SocketService _instance = SocketService._internal();
-
   factory SocketService() => _instance;
-
-  // final isTesting = true; // dummy for testing, check if socket server is running
-  final isTesting = false;
 
   SocketService._internal() {
     _init();
@@ -18,7 +18,6 @@ class SocketService {
 
   void _init() {
     final String server = dotenv.env['SOCKET_URL']!;
-    if (isTesting) return;
     socket = IO.io(
       server,
       IO.OptionBuilder()
@@ -30,7 +29,6 @@ class SocketService {
 
   void connect() {
     debugPrint('Socket connect');
-    if (isTesting) return;
     socket.connect();
     socket.onConnect((_) {
       debugPrint('Connected to socket server');
@@ -39,28 +37,30 @@ class SocketService {
     socket.onDisconnect((_) {
       debugPrint('Disconnected from socket server');
     });
+
+    debugPrint('Register currentUid: $currentUid');
+    socket.emit("register", { "userId": currentUid });
   }
 
   void disconnect() {
+    debugPrint('Unregister currentUid: $currentUid');
+    socket.emit("unregister", { "userId": currentUid });
+
     debugPrint('Socket disconnect');
-    if (isTesting) return;
     socket.disconnect();
   }
 
   void emit(String event, dynamic data) {
-    if (isTesting) return;
     debugPrint('Socket emit to event: $event with data: $data');
     socket.emit(event, data);
   }
 
   void on(String event, Function(dynamic) callback) {
-    if (isTesting) return;
     debugPrint('Socket on event: $event');
     socket.on(event, callback);
   }
 
   void off(String event, [Function(dynamic)? callback]) {
-    if (isTesting) return;
     debugPrint('Socket off event: $event');
     socket.off(event, callback);
   }

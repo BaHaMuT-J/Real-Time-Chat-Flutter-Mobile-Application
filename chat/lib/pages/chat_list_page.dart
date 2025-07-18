@@ -17,7 +17,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ChatListPage extends StatefulWidget {
-  const ChatListPage({super.key});
+  const ChatListPage({super.key, this.payload});
+
+  final dynamic payload;
 
   @override
   State<ChatListPage> createState() => _ChatListPageState();
@@ -38,8 +40,20 @@ class _ChatListPageState extends State<ChatListPage> {
     super.initState();
     appStateNotifier.addListener(_onAppStateChanged);
     startApp();
-    registerSocket(socketService, currentUid);
     socketService.on("message", _listenToMessage);
+
+    // Navigate to Chat page when user tap notification
+    if (widget.payload != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          final chat = ChatModel.fromJson(jsonDecode(widget.payload['chat']));
+          final name = widget.payload['chatName'];
+          pushToChatPage(chat, name);
+        } catch (e) {
+          debugPrint('Error parsing payload and navigating: $e');
+        }
+      });
+    }
   }
 
   @override
@@ -47,7 +61,6 @@ class _ChatListPageState extends State<ChatListPage> {
     debugPrint('Dispose from Chat list page');
     // When dispose after logout, this will have error
     try {
-      unregisterSocket(socketService, currentUid);
       socketService.off("message", _listenToMessage);
     } catch (e) {
       debugPrint('Unregister socket error from Chat list page: $e');
@@ -89,8 +102,8 @@ class _ChatListPageState extends State<ChatListPage> {
 
         // Show local notification
         final friend = friendCache[message.senderId] ?? await _userFirestoreService.getUser(message.senderId);
-        final notificationTitle = data['chatName'];
-        final notificationBody = friend != null ? '${friend.username} send a new message' : 'New message';
+        final notificationTitle = chat.isGroup ? chat.chatName : friend?.username;
+        final notificationBody = friend != null ? '${friend.username} send a new message From Chat list' : 'New message';
         LocalNotificationService.showCustomNotification(
           title: notificationTitle!,
           body: notificationBody,
@@ -151,6 +164,16 @@ class _ChatListPageState extends State<ChatListPage> {
         );
       }
     }
+  }
+
+  void pushToChatPage(ChatModel chat, String name) {
+    socketService.off("message", _listenToMessage);
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => ChatPage(chat: chat, chatName: name),
+    )).then((value) {
+      _loadChats();
+      socketService.on("message", _listenToMessage);
+    });
   }
 
   @override
@@ -286,13 +309,7 @@ class _ChatListPageState extends State<ChatListPage> {
         ],
       ),
       onTap: () async {
-        socketService.off("message", _listenToMessage);
-        Navigator.push(context, MaterialPageRoute(
-          builder: (_) => ChatPage(chat: chat, chatName: name),
-        )).then((value) {
-          _loadChats();
-          socketService.on("message", _listenToMessage);
-        });
+        pushToChatPage(chat, name);
       },
     );
   }

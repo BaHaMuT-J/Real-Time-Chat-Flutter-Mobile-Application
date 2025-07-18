@@ -122,7 +122,7 @@ class FirebaseMessagingService {
     debugPrint('Handling navigation from notification data: $data');
 
     navigatorKey.currentState?.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const InitialPage()),
+      MaterialPageRoute(builder: (_) => InitialPage(payload: data,)),
           (route) => false,
     );
   }

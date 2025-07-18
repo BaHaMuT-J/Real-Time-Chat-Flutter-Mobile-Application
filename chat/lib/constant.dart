@@ -1,4 +1,3 @@
-import 'package:chat/services/socket.dart';
 import 'package:flutter/material.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -27,15 +26,3 @@ class AppStateNotifier extends ValueNotifier<bool> {
 }
 
 final appStateNotifier = AppStateNotifier();
-
-// Register current user to socket in chat list and chat page
-void registerSocket(SocketService socketService, String currentUid) async {
-  debugPrint('Register currentUid: $currentUid');
-  socketService.emit("register", { "userId": currentUid });
-}
-
-// Unregister current user to socket in chat list and chat page
-void unregisterSocket(SocketService socketService, String currentUid) async {
-  debugPrint('Unregister currentUid: $currentUid');
-  socketService.emit("unregister", { "userId": currentUid });
-}

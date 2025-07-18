@@ -6,6 +6,7 @@ import 'package:chat/constant.dart';
 import 'package:chat/model/chat_model.dart';
 import 'package:chat/model/message_model.dart';
 import 'package:chat/services/chat_firestore.dart';
+import 'package:chat/services/local_notification.dart';
 import 'package:chat/services/socket.dart';
 import 'package:chat/services/user_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -43,6 +44,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void initState() {
+    debugPrint('InitState from chat page');
     super.initState();
     messages = [];
 
@@ -57,7 +59,6 @@ class _ChatPageState extends State<ChatPage> {
       await _markAsReadAll();
     });
 
-    registerSocket(socketService, currentUid);
     socketService.on("message", _listenToMessage);
     socketService.on("read", _listenToRead);
     socketService.on("allRead", _listenToAllRead);
@@ -84,7 +85,8 @@ class _ChatPageState extends State<ChatPage> {
     debugPrint('Chat page socket message in $currentUid: $data');
     final currentChatUid = widget.chat.chatId;
     final newMessage = MessageModel.fromJson(jsonDecode(data['message']));
-    if (data['chatId'] == currentChatUid) {
+    final messageChatId = data['chatId'];
+    if (messageChatId == currentChatUid) {
       debugPrint('Try to update messages');
       setState(() {
         messages = [...messages, newMessage];
@@ -101,6 +103,23 @@ class _ChatPageState extends State<ChatPage> {
       }
     } else {
       debugPrint('Try to create local notification');
+      // Show local notification
+      final ChatModel? chat = await _chatFirestoreService.getChatById(currentChatUid);
+      if (chat == null) return;
+
+      String? friendName = userNameCache[newMessage.senderId];
+      if (friendName == null) {
+        final friend = await _userFirestoreService.getUser(newMessage.senderId);
+        friendName = friend?.username;
+      }
+
+      final notificationTitle = chat.isGroup ? chat.chatName : friendName;
+      final notificationBody = friendName != null ? '$friendName send a new message From Chat list' : 'New message';
+      LocalNotificationService.showCustomNotification(
+        title: notificationTitle!,
+        body: notificationBody,
+        payload: jsonEncode(data),
+      );
     }
   }
 
