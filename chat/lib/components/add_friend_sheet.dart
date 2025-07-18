@@ -1,3 +1,5 @@
+import 'package:chat/model/received_friend_request_model.dart';
+import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/components/profile_avatar.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +7,7 @@ import 'package:chat/constant.dart';
 import 'package:chat/services/user_firestore.dart';
 
 class AddFriendSheet extends StatefulWidget {
-  final VoidCallback onRequestSent;
+  final Future<void> Function(SentFriendRequestModel sentRequest, ReceivedFriendRequestModel receivedRequest) onRequestSent;
 
   const AddFriendSheet({super.key, required this.onRequestSent});
 
@@ -84,12 +86,14 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                                     setState(() {
                                       loadingRequests.add(user.uid);
                                     });
-                                    await UserFirestoreService().sendFriendRequest(user.uid);
+                                    final pair = await UserFirestoreService().sendFriendRequest(user.uid);
+                                    final sentRequest = pair.first;
+                                    final receivedRequest = pair.second;
                                     setState(() {
                                       localSentRequests.add(user.uid);
                                       loadingRequests.remove(user.uid);
                                     });
-                                    widget.onRequestSent();
+                                    widget.onRequestSent(sentRequest, receivedRequest);
                                   },
                                 ),
                           );

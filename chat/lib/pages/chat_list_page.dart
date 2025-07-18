@@ -100,6 +100,7 @@ class _ChatListPageState extends State<ChatListPage> {
   void _listenToFriend(data) async {
     debugPrint('Chat list socket friend in $currentUid: $data');
     UserPrefs.saveIsLoadFriend(false);
+    _loadChats(isPreferPref: false);
   }
 
   void _listenToSentRequest(data) async {
@@ -124,6 +125,7 @@ class _ChatListPageState extends State<ChatListPage> {
   Future<void> _loadChats({bool isPreferPref = true}) async {
     try {
       final chatUsers = await chatFirestoreService.getChats(isPreferPref: isPreferPref);
+      debugPrint('chatUsers in loadChats: $chatUsers');
       setState(() {
         allChats = chatUsers;
       });

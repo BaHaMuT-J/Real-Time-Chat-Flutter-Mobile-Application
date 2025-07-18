@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:chat/components/add_friend_sheet.dart';
 import 'package:chat/components/edit_profile_sheet.dart';
@@ -10,7 +11,6 @@ import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/services/firebase_message.dart';
 import 'package:chat/services/local_notification.dart';
-import 'package:chat/services/socket.dart';
 import 'package:chat/services/storage.dart';
 import 'package:flutter/material.dart';
 import 'package:chat/constant.dart';
@@ -74,19 +74,67 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
     LocalNotificationService.showNotificationFromSocket(data);
   }
 
+  // data = {
+  //     'userId': senderUid,
+  //     'friendId': currentUid,
+  //     'isCreate': true,
+  //     'isDelete': true,
+  //   }
   void _listenToFriend(data) async {
     debugPrint('Home info socket friend in $currentUid: $data');
-    UserPrefs.saveIsLoadFriend(false);
+    final friendUid = data['friendId'];
+    final friend = await userFirestoreService.getUser(friendUid);
+    if (data['isCreate'] != null && data['isCreate'] as bool == true) {
+      setState(() {
+        friends?.add(friend!);
+        friends?.sort((a, b) => a.username.compareTo(b.username));
+        hasNewRequests = true;
+      });
+      UserPrefs.saveFriendsList(friends!);
+    } else if (data['isDelete'] != null && data['isDelete'] as bool == true) {
+      setState(() {
+        friends?.removeWhere((user) => user.uid == friend?.uid);
+        hasNewRequests = true;
+      });
+      UserPrefs.saveFriendsList(friends!);
+    }
+    UserPrefs.saveIsLoadChat(false);
   }
 
   void _listenToSentRequest(data) async {
     debugPrint('Home info socket sent request in $currentUid: $data');
-    UserPrefs.saveIsLoadSentRequest(false);
+    final sentRequest = SentFriendRequestModel.fromJson(jsonDecode(data['request']));
+    if (data['isUpdate'] != null && data['isUpdate'] as bool == true) {
+      setState(() {
+        final index = sentFriendRequests?.indexWhere((request) => request.user.uid == sentRequest.user.uid);
+        if (index != null && index != -1) {
+          sentFriendRequests?[index] = sentRequest;
+          hasNewRequests = true;
+        }
+      });
+    } else if (data['isDelete'] != null && data['isDelete'] as bool == true) {
+      setState(() {
+        sentFriendRequests?.removeWhere((request) => request.user.uid == sentRequest.user.uid);
+        hasNewRequests = true;
+      });
+    }
   }
 
   void _listenToReceivedRequest(data) async {
     debugPrint('Home info socket received request in $currentUid: $data');
-    UserPrefs.saveIsLoadReceivedRequest(false);
+    final receivedRequest = ReceivedFriendRequestModel.fromJson(jsonDecode(data['request']));
+    if (data['isCreate'] != null && data['isCreate'] as bool == true) {
+      setState(() {
+        receivedFriendRequests?.add(receivedRequest);
+        receivedFriendRequests?.sort((a, b) => a.username.compareTo(b.username));
+        hasNewRequests = true;
+      });
+    } else if (data['isDelete'] != null && data['isDelete'] as bool == true) {
+      setState(() {
+        receivedFriendRequests?.removeWhere((request) => request.uid == receivedRequest.uid);
+        hasNewRequests = true;
+      });
+    }
   }
 
   void startApp() {
@@ -174,7 +222,6 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   Future<void> _handleLogOut() async {
     try {
       String uid = currentUid;
-      final socketService = SocketService();
       socketService.disconnect();
       await auth.signOut();
       await UserPrefs.logout();
@@ -249,7 +296,20 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
       backgroundColor: lightBlueGreenColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => AddFriendSheet(
-        onRequestSent: () => _loadSentFriendRequests(isPreferPref: false),
+        onRequestSent: (sentRequest, receivedRequest) async {
+          // Create own new request
+          setState(() {
+            sentFriendRequests?.add(sentRequest);
+            sentFriendRequests?.sort((a, b) => a.user.username.compareTo(b.user.username));
+          });
+
+          // Emit to create received request of other user
+          socketService.emit("receivedRequest", {
+            'userId': sentRequest.user.uid,
+            'request': jsonEncode(receivedRequest.toJson()),
+            'isCreate': true,
+          });
+        },
       ),
     );
   }
@@ -263,45 +323,85 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
         builder: (context, setModalState) => FriendRequestsSheet(
           sentRequests: sentFriendRequests,
           receivedRequests: receivedFriendRequests,
-          onCancelSent: (uid) async {
-            await userFirestoreService.cancelSentRequest(uid);
-            await _loadSentFriendRequests(isPreferPref: false);
-            socketService.emit("sentRequest", {
-              'userId': currentUid,
-              'request': {},
+          onCancelSent: (receiverUid) async {
+            final pair = await userFirestoreService.cancelSentRequest(receiverUid);
+            final sentRequest = pair.first;
+            final receivedRequest = pair.second;
+
+            // Delete own sent request
+            setState(() {
+              sentFriendRequests?.removeWhere((request) => request.user.uid == sentRequest.user.uid);
             });
+
+            // Emit to delete received request of other user
+            socketService.emit("receivedRequest", {
+              'userId': sentRequest.user.uid,
+              'request': jsonEncode(receivedRequest.toJson()),
+              'isDelete': true,
+            });
+
             setModalState(() {});
           },
-          onCloseSent: (uid) async {
-            await userFirestoreService.closeSentRequest(uid);
-            await _loadSentFriendRequests(isPreferPref: false);
-            socketService.emit("sentRequest", {
-              'userId': currentUid,
-              'request': {},
+          onCloseSent: (receiverUid) async {
+            await userFirestoreService.closeSentRequest(receiverUid);
+
+            // Delete own sent request
+            setState(() {
+              sentFriendRequests?.removeWhere((request) => request.user.uid == receiverUid);
             });
+
             setModalState(() {});
           },
           onApproveReceived: (uid) async {
-            await userFirestoreService.acceptFriendRequest(uid);
-            await _loadReceivedFriendRequests(isPreferPref: false);
-            await _loadFriends(isPreferPref: false);
-            socketService.emit("receivedRequest", {
-              'userId': currentUid,
-              'request': {},
+            final mainPair = await userFirestoreService.acceptFriendRequest(uid);
+            final senderUid = mainPair.first;
+            final sentRequest = mainPair.second;
+
+            // Emit to delete sentRequest of other user
+            socketService.emit("sentRequest", {
+              'userId': senderUid,
+              'request': jsonEncode(sentRequest.toJson()),
+              'isUpdate': true,
             });
+
+            // Delete own received request
+            setState(() {
+              receivedFriendRequests?.removeWhere((request) => request.uid == senderUid);
+            });
+
+            // Emit friend to other user
             socketService.emit("friend", {
-              'userId': currentUid,
-              'friend': {},
+              'userId': senderUid,
+              'friendId': currentUid,
+              'isCreate': true,
             });
+
+            // Create own new friend
+            final friend = await userFirestoreService.getUser(senderUid);
+            setState(() {
+              friends?.add(friend!);
+              friends?.sort((a, b) => a.username.compareTo(b.username));
+            });
+
             setModalState(() {});
           },
           onRejectReceived: (uid) async {
-            await userFirestoreService.rejectFriendRequest(uid);
-            await _loadReceivedFriendRequests(isPreferPref: false);
-            socketService.emit("receivedRequest", {
-              'userId': currentUid,
-              'request': {},
+            final pair = await userFirestoreService.rejectFriendRequest(uid);
+            final sentRequest = pair.first;
+            final receivedRequest = pair.second;
+
+            // Emit to update status of sent request of other user
+            socketService.emit("sentRequest", {
+              'userId': receivedRequest.uid,
+              'request': jsonEncode(sentRequest.toJson()),
+              'isUpdate': true,
             });
+
+            // Delete own received request
+            setState(() {
+              receivedFriendRequests?.removeWhere((request) => request.uid == receivedRequest.uid);
+            });
+
             setModalState(() {});
           },
         ),

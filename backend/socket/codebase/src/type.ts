@@ -21,15 +21,19 @@ interface AllReadMessage {
 
 interface FriendMessage {
   userId: string;
-  request: object;
+  friendId: string;
 }
 
 interface SentRequestMessage {
   userId: string;
   request: object;
+  isUpdate?: boolean;
+  isDelete?: boolean;
 }
 
 interface ReceivedRequestMessage {
   userId: string;
   request: object;
+  isCreate?: boolean;
+  isDelete?: boolean;
 }

@@ -206,6 +206,7 @@ class UserFirestoreService {
     final currentUserRef = _firestore.collection('users').doc(currentUid);
     final receiverUserRef = _firestore.collection('users').doc(receiverUid);
 
+    // 1. Save friend request (Sent)
     await _firestore
         .collection('users')
         .doc(currentUid)
@@ -216,6 +217,7 @@ class UserFirestoreService {
           'status': 'Pending...',
         });
 
+    // 2. Save friend request (Received)
     await _firestore
         .collection('users')
         .doc(receiverUid)
@@ -225,6 +227,7 @@ class UserFirestoreService {
           'user': currentUserRef,
         });
 
+    // 3. Fetch user data
     final currentUserSnap = await currentUserRef.get();
     final receiverUserSnap = await receiverUserRef.get();
 
@@ -237,6 +240,7 @@ class UserFirestoreService {
     final currentUserModel = UserModel.fromJson(currentUserData);
     final receiverUserModel = UserModel.fromJson(receiverUserData);
 
+    // 4. Create models
     final sentRequest = SentFriendRequestModel(
       user: receiverUserModel,
       status: 'Pending...',
@@ -303,9 +307,10 @@ class UserFirestoreService {
     return results;
   }
 
-  Future<void> acceptFriendRequest(String senderUid) async {
+  Future<Pair<String, SentFriendRequestModel>> acceptFriendRequest(String senderUid) async {
     final currentUid = _auth.currentUser!.uid;
 
+    // 1. Update sender's sent request to Accepted
     await _firestore
         .collection('users')
         .doc(senderUid)
@@ -313,6 +318,7 @@ class UserFirestoreService {
         .doc(currentUid)
         .update({'status': 'Accepted'});
 
+    // 2. Remove the receiver's received request entry
     await _firestore
         .collection('users')
         .doc(currentUid)
@@ -320,27 +326,47 @@ class UserFirestoreService {
         .doc(senderUid)
         .delete();
 
+    // 3. Setup Firestore references
     final currentUserRef = _firestore.collection('users').doc(currentUid);
     final senderUserRef = _firestore.collection('users').doc(senderUid);
 
-    await _firestore.collection('users').doc(currentUid)
+    // 4. Add each other as friends
+    await _firestore
+        .collection('users')
+        .doc(currentUid)
         .collection('friends')
         .doc(senderUid)
         .set({'friend': senderUserRef});
 
-    await _firestore.collection('users').doc(senderUid)
+    await _firestore
+        .collection('users')
+        .doc(senderUid)
         .collection('friends')
         .doc(currentUid)
         .set({'friend': currentUserRef});
 
-    // Create chat between these users
+    // 5. Fetch sender's full user data
+    final currentUserSnap = await currentUserRef.get();
+    final currentUserData = currentUserSnap.data()!;
+    currentUserData['uid'] = currentUid;
+
+    // 6. Construct SentFriendRequestModel with "Accepted" status
+    final sentRequestModel = SentFriendRequestModel(
+      user: UserModel.fromJson(currentUserData),
+      status: 'Accepted',
+    );
+
+    // 7. Create a chat between these users
     await UserPrefs.saveIsLoadChat(false);
-    _chatFirestoreService.createChat(senderUid);
+    await _chatFirestoreService.createChat(senderUid);
+
+    return Pair(senderUid, sentRequestModel);
   }
 
-  Future<void> rejectFriendRequest(String senderUid) async {
+  Future<Pair<SentFriendRequestModel, ReceivedFriendRequestModel>> rejectFriendRequest(String senderUid) async {
     final currentUid = _auth.currentUser!.uid;
 
+    // 1. Update sender's sent request to "Rejected"
     await _firestore
         .collection('users')
         .doc(senderUid)
@@ -348,17 +374,47 @@ class UserFirestoreService {
         .doc(currentUid)
         .update({'status': 'Rejected'});
 
+    // 2. Remove from receiver's received requests
     await _firestore
         .collection('users')
         .doc(currentUid)
         .collection('received_friend_requests')
         .doc(senderUid)
         .delete();
+
+    // 3. Fetch user data
+    final senderSnap = await _firestore.collection('users').doc(senderUid).get();
+    final currentSnap = await _firestore.collection('users').doc(currentUid).get();
+
+    final senderData = senderSnap.data()!;
+    senderData['uid'] = senderSnap.id;
+
+    final currentData = currentSnap.data()!;
+    currentData['uid'] = currentSnap.id;
+
+    final senderUser = UserModel.fromJson(senderData);
+    final currentUser = UserModel.fromJson(currentData);
+
+    // 4. Create models
+    final sentModel = SentFriendRequestModel(
+      user: currentUser,
+      status: 'Rejected',
+    );
+
+    final receivedModel = ReceivedFriendRequestModel(
+      uid: senderUser.uid,
+      username: senderUser.username,
+      description: senderUser.description,
+      profileImageUrl: senderUser.profileImageUrl,
+    );
+
+    return Pair(sentModel, receivedModel);
   }
 
-  Future<void> cancelSentRequest(String receiverUid) async {
+  Future<Pair<SentFriendRequestModel, ReceivedFriendRequestModel>> cancelSentRequest(String receiverUid) async {
     final currentUid = _auth.currentUser!.uid;
 
+    // 1. Delete from sender's sent requests
     await _firestore
         .collection('users')
         .doc(currentUid)
@@ -366,12 +422,41 @@ class UserFirestoreService {
         .doc(receiverUid)
         .delete();
 
+    // 2. Delete from receiver's received requests
     await _firestore
         .collection('users')
         .doc(receiverUid)
         .collection('received_friend_requests')
         .doc(currentUid)
         .delete();
+
+    // 3. Fetch user data
+    final currentUserSnap = await _firestore.collection('users').doc(currentUid).get();
+    final receiverUserSnap = await _firestore.collection('users').doc(receiverUid).get();
+
+    final currentUserData = currentUserSnap.data()!;
+    currentUserData['uid'] = currentUserSnap.id;
+
+    final receiverUserData = receiverUserSnap.data()!;
+    receiverUserData['uid'] = receiverUserSnap.id;
+
+    final currentUser = UserModel.fromJson(currentUserData);
+    final receiverUser = UserModel.fromJson(receiverUserData);
+
+    // 4. Create models
+    final sentModel = SentFriendRequestModel(
+      user: receiverUser,
+      status: 'Cancelled',
+    );
+
+    final receivedModel = ReceivedFriendRequestModel(
+      uid: currentUser.uid,
+      username: currentUser.username,
+      description: currentUser.description,
+      profileImageUrl: currentUser.profileImageUrl,
+    );
+
+    return Pair(sentModel, receivedModel);
   }
 
   Future<void> closeSentRequest(String receiverUid) async {
@@ -385,7 +470,7 @@ class UserFirestoreService {
         .delete();
   }
 
-  Future<void> unfriend(String friendUID) async {
+  Future<Pair<String, String>> unfriend(String friendUID) async {
     final currentUid = _auth.currentUser!.uid;
 
     await _firestore
@@ -422,6 +507,8 @@ class UserFirestoreService {
     // Delete chat between these users
     await UserPrefs.saveIsLoadChat(false);
     _chatFirestoreService.deleteChat(friendUID);
+
+    return Pair(currentUid, friendUID);
   }
 
 }

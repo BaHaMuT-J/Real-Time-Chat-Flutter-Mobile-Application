@@ -80,7 +80,10 @@ class ChatFirestoreService {
         .get();
 
     final chatIds = userChatsSnap.docs.map((d) => d.id).toList();
-    if (chatIds.isEmpty) return [];
+    if (chatIds.isEmpty) {
+      UserPrefs.saveChats([]);
+      return [];
+    };
 
     final chatsSnap = await _firestore
         .collection('chats')
