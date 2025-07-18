@@ -2,11 +2,19 @@ import 'dart:convert';
 
 import 'package:chat/constant.dart';
 import 'package:chat/main.dart';
+import 'package:chat/model/chat_model.dart';
+import 'package:chat/model/message_model.dart';
+import 'package:chat/services/chat_firestore.dart';
+import 'package:chat/services/user_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class LocalNotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  static final UserFirestoreService _userFirestoreService = UserFirestoreService();
+  static final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
+
+  static final Map<String, String?> userNameCache = {};
 
   static void initialize() {
     const InitializationSettings initializationSettingsAndroid = InitializationSettings(android: AndroidInitializationSettings("@drawable/ic_launcher"));
@@ -51,6 +59,27 @@ class LocalNotificationService {
       body,
       notificationDetails,
       payload: payload,
+    );
+  }
+
+  static Future<void> showNotificationFromSocket(data) async {
+    final newMessage = MessageModel.fromJson(jsonDecode(data['message']));
+    final messageChatId = data['chatId'];
+    final ChatModel? chat = await _chatFirestoreService.getChatById(messageChatId);
+    if (chat == null) return;
+
+    String? friendName = userNameCache[newMessage.senderId];
+    if (friendName == null) {
+      final friend = await _userFirestoreService.getUser(newMessage.senderId);
+      friendName = friend?.username;
+    }
+
+    final notificationTitle = chat.isGroup ? chat.chatName : friendName;
+    final notificationBody = friendName != null ? '$friendName send a new message From Chat list' : 'New message';
+    LocalNotificationService.showCustomNotification(
+      title: notificationTitle!,
+      body: notificationBody,
+      payload: jsonEncode(data),
     );
   }
 

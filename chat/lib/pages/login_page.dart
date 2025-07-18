@@ -2,9 +2,7 @@ import 'package:chat/constant.dart';
 import 'package:chat/pages/main_page.dart';
 import 'package:chat/pages/register_page.dart';
 import 'package:chat/services/firebase_message.dart';
-import 'package:chat/services/socket.dart';
 import 'package:chat/userPref.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -15,10 +13,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  late final FirebaseAuth _auth = FirebaseAuth.instance;
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final SocketService socketService = SocketService();
 
   Future<void> _handleLogin() async {
     final email = emailController.text.trim();
@@ -51,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      await _auth.signInWithEmailAndPassword(
+      await auth.signInWithEmailAndPassword(
           email: email, password: password);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

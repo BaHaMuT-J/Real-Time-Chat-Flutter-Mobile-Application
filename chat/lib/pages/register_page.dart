@@ -1,7 +1,6 @@
 import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -12,7 +11,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  late final FirebaseAuth _auth = FirebaseAuth.instance;
   late final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final emailController = TextEditingController();
   final usernameController = TextEditingController();
@@ -62,14 +60,14 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      await _auth.createUserWithEmailAndPassword(
+      await auth.createUserWithEmailAndPassword(
           email: email, password: password);
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
-      await _firestore.collection('users').doc(_auth.currentUser?.uid).set({
+      await auth.signInWithEmailAndPassword(email: email, password: password);
+      await _firestore.collection('users').doc(auth.currentUser?.uid).set({
         'email': email,
         'username': username,
       });
-      await _auth.signOut();
+      await auth.signOut();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Register success. Please login')),

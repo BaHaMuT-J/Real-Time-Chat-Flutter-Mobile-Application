@@ -8,10 +8,9 @@ import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/services/firebase_message.dart';
+import 'package:chat/services/local_notification.dart';
 import 'package:chat/services/socket.dart';
 import 'package:chat/services/storage.dart';
-import 'package:chat/services/user_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:chat/constant.dart';
 import 'package:chat/userPref.dart';
@@ -25,10 +24,7 @@ class HomeInfoPage extends StatefulWidget {
 }
 
 class _HomeInfoPageState extends State<HomeInfoPage> {
-  final _auth = FirebaseAuth.instance;
-  final UserFirestoreService _firestoreService = UserFirestoreService();
   final StorageService _storageService = StorageService();
-  String get currentUid => _auth.currentUser!.uid;
 
   String email = '';
   String username = '';
@@ -45,11 +41,13 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
     super.initState();
     appStateNotifier.addListener(_onAppStateChanged);
     startApp();
+    socketService.on("message", _listenToMessage);
   }
 
   @override
   void dispose() {
     debugPrint('Dispose from Home Info page');
+    socketService.off("message", _listenToMessage);
     appStateNotifier.removeListener(_onAppStateChanged);
     super.dispose();
   }
@@ -57,6 +55,11 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   void _onAppStateChanged() {
     debugPrint('On app state changed from home info page');
     startApp();
+  }
+
+  void _listenToMessage(data) async {
+    UserPrefs.saveIsLoadChat(false);
+    LocalNotificationService.showNotificationFromSocket(data);
   }
 
   void startApp() {
@@ -73,7 +76,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   Future<void> _loadProfile({bool isPreferPref = true}) async {
     try {
-      final data = await _firestoreService.loadProfile(isPreferPref: isPreferPref);
+      final data = await userFirestoreService.loadProfile(isPreferPref: isPreferPref);
       if (data != null) {
         setState(() {
           email = data['email'];
@@ -93,7 +96,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   Future<void> _loadFriends({bool isPreferPref = true}) async {
     try {
-      final friendUsers = await _firestoreService.loadFriends(isPreferPref: isPreferPref);
+      final friendUsers = await userFirestoreService.loadFriends(isPreferPref: isPreferPref);
       setState(() {
         friends = friendUsers;
       });
@@ -108,7 +111,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   Future<void> _loadSentFriendRequests({bool isPreferPref = true}) async {
     try {
-      final allSentFriendRequests = await _firestoreService.getAllSentFriendRequest(isPreferPref: isPreferPref);
+      final allSentFriendRequests = await userFirestoreService.getAllSentFriendRequest(isPreferPref: isPreferPref);
       setState(() {
         sentFriendRequests = allSentFriendRequests;
       });
@@ -123,7 +126,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   Future<void> _loadReceivedFriendRequests({bool isPreferPref = true}) async {
     try {
-      final allReceivedFriendRequests = await _firestoreService.getAllReceivedFriendRequest(isPreferPref: isPreferPref);
+      final allReceivedFriendRequests = await userFirestoreService.getAllReceivedFriendRequest(isPreferPref: isPreferPref);
       setState(() {
         receivedFriendRequests = allReceivedFriendRequests;
       });
@@ -141,7 +144,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
       String uid = currentUid;
       final socketService = SocketService();
       socketService.disconnect();
-      await _auth.signOut();
+      await auth.signOut();
       await UserPrefs.logout();
       await FirebaseMessagingService.dispose(uid: uid);
       if (!mounted) return;
@@ -192,7 +195,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
           }
 
           if (newUsername != username || newDescription != description || newProfileImageUrl != profileImageUrl) {
-            await _firestoreService.updateProfile(
+            await userFirestoreService.updateProfile(
               email: email,
               username: newUsername,
               description: newDescription,
@@ -229,23 +232,23 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
           sentRequests: sentFriendRequests,
           receivedRequests: receivedFriendRequests,
           onCancelSent: (uid) async {
-            await _firestoreService.cancelSentRequest(uid);
+            await userFirestoreService.cancelSentRequest(uid);
             await _loadSentFriendRequests(isPreferPref: false);
             setModalState(() {});
           },
           onCloseSent: (uid) async {
-            await _firestoreService.closeSentRequest(uid);
+            await userFirestoreService.closeSentRequest(uid);
             await _loadSentFriendRequests(isPreferPref: false);
             setModalState(() {});
           },
           onApproveReceived: (uid) async {
-            await _firestoreService.acceptFriendRequest(uid);
+            await userFirestoreService.acceptFriendRequest(uid);
             await _loadReceivedFriendRequests(isPreferPref: false);
             await _loadFriends(isPreferPref: false);
             setModalState(() {});
           },
           onRejectReceived: (uid) async {
-            await _firestoreService.rejectFriendRequest(uid);
+            await userFirestoreService.rejectFriendRequest(uid);
             await _loadReceivedFriendRequests(isPreferPref: false);
             setModalState(() {});
           },
@@ -278,7 +281,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
                       friends: friends!,
               onUnfriend: (UserModel friend) async {
                 try {
-                  await _firestoreService.unfriend(friend.uid);
+                  await userFirestoreService.unfriend(friend.uid);
                   await _loadFriends(isPreferPref: false);
                   await _loadSentFriendRequests(isPreferPref: false);
                   if (!mounted) return;

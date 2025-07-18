@@ -3,7 +3,6 @@ import 'package:chat/pages/login_page.dart';
 import 'package:chat/pages/main_page.dart';
 import 'package:chat/services/firebase_message.dart';
 import 'package:chat/services/local_notification.dart';
-import 'package:chat/services/socket.dart';
 import 'package:chat/userPref.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -35,14 +34,12 @@ class InitialPage extends StatefulWidget {
   const InitialPage({super.key, this.payload});
 
   final dynamic payload;
-  static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   State<InitialPage> createState() => _InitialPageState();
 }
 
 class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
-  final socketService = SocketService();
 
   @override
   void initState() {
@@ -87,7 +84,7 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
 
     if (email != null && password != null) {
       try {
-        await InitialPage._auth.signInWithEmailAndPassword(email: email, password: password);
+        await auth.signInWithEmailAndPassword(email: email, password: password);
         socketService.connect();
         setNotLoadFromPref();
         await FirebaseMessagingService.initialize();

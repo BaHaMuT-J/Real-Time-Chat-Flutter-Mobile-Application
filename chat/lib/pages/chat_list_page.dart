@@ -7,13 +7,9 @@ import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/chat_page.dart';
 import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
-import 'package:chat/services/chat_firestore.dart';
 import 'package:chat/services/firebase_message.dart';
 import 'package:chat/services/local_notification.dart';
-import 'package:chat/services/socket.dart';
-import 'package:chat/services/user_firestore.dart';
 import 'package:chat/userPref.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ChatListPage extends StatefulWidget {
@@ -26,12 +22,6 @@ class ChatListPage extends StatefulWidget {
 }
 
 class _ChatListPageState extends State<ChatListPage> {
-  late final FirebaseAuth _auth = FirebaseAuth.instance;
-  final UserFirestoreService _userFirestoreService = UserFirestoreService();
-  final ChatFirestoreService _chatFirestoreService = ChatFirestoreService();
-  String get currentUid => _auth.currentUser!.uid;
-  final socketService = SocketService();
-
   List<ChatModel>? allChats;
   final Map<String, UserModel?> friendCache = {};
 
@@ -74,13 +64,6 @@ class _ChatListPageState extends State<ChatListPage> {
     startApp();
   }
 
-  // data = {
-  //         'userId': uid,
-  //         'chatId': widget.chat.chatId,
-  //         'chat': jsonEncode(widget.chat.toJson()),
-  //         'chatName': widget.chatName,
-  //         'message': jsonEncode(message.toJson()),
-  //       }
   void _listenToMessage(data) async {
     try {
       debugPrint('Chat list socket message in $currentUid: $data');
@@ -99,19 +82,11 @@ class _ChatListPageState extends State<ChatListPage> {
           allChats!.removeAt(chatIndex);
           allChats!.insert(0, chat);
         });
-
-        // Show local notification
-        final friend = friendCache[message.senderId] ?? await _userFirestoreService.getUser(message.senderId);
-        final notificationTitle = chat.isGroup ? chat.chatName : friend?.username;
-        final notificationBody = friend != null ? '${friend.username} send a new message From Chat list' : 'New message';
-        LocalNotificationService.showCustomNotification(
-          title: notificationTitle!,
-          body: notificationBody,
-          payload: jsonEncode(data),
-        );
+        UserPrefs.saveChats(allChats!);
       } else {
         debugPrint('Chat not found in list');
       }
+      LocalNotificationService.showNotificationFromSocket(data);
     } catch (e) {
       debugPrint('Error handling incoming socket message: $e');
     }
@@ -128,7 +103,7 @@ class _ChatListPageState extends State<ChatListPage> {
 
   Future<void> _loadChats({bool isPreferPref = true}) async {
     try {
-      final chatUsers = await _chatFirestoreService.getChats(isPreferPref: isPreferPref);
+      final chatUsers = await chatFirestoreService.getChats(isPreferPref: isPreferPref);
       setState(() {
         allChats = chatUsers;
       });
@@ -145,7 +120,7 @@ class _ChatListPageState extends State<ChatListPage> {
     try {
       String uid = currentUid;
       socketService.disconnect();
-      await _auth.signOut();
+      await auth.signOut();
       await UserPrefs.logout();
       await FirebaseMessagingService.dispose(uid: uid);
       if (!mounted) return;
@@ -231,7 +206,7 @@ class _ChatListPageState extends State<ChatListPage> {
               );
             } else {
               return FutureBuilder<UserModel?>(
-                future: _userFirestoreService.getUser(friendUid),
+                future: userFirestoreService.getUser(friendUid),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const ListTile(title: Text("Loading..."));

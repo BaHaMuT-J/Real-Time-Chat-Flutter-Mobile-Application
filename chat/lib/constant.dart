@@ -1,3 +1,7 @@
+import 'package:chat/services/chat_firestore.dart';
+import 'package:chat/services/socket.dart';
+import 'package:chat/services/user_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -26,3 +30,9 @@ class AppStateNotifier extends ValueNotifier<bool> {
 }
 
 final appStateNotifier = AppStateNotifier();
+
+final FirebaseAuth auth = FirebaseAuth.instance;
+final UserFirestoreService userFirestoreService = UserFirestoreService();
+final ChatFirestoreService chatFirestoreService = ChatFirestoreService();
+String get currentUid => auth.currentUser!.uid;
+final socketService = SocketService();
