@@ -1,5 +1,5 @@
+import 'package:chat/model/received_friend_request_model.dart';
 import 'package:chat/model/sent_friend_request_model.dart';
-import 'package:chat/model/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:chat/components/received_request_tile.dart';
 import 'package:chat/components/sent_request_tile.dart';
@@ -7,7 +7,7 @@ import 'package:chat/constant.dart';
 
 class FriendRequestsSheet extends StatelessWidget {
   final List<SentFriendRequestModel>? sentRequests;
-  final List<UserModel>? receivedRequests;
+  final List<ReceivedFriendRequestModel>? receivedRequests;
   final Future<void> Function(String uid) onCancelSent;
   final Future<void> Function(String uid) onCloseSent;
   final Future<void> Function(String uid) onApproveReceived;
@@ -57,13 +57,13 @@ class FriendRequestsSheet extends StatelessWidget {
           _subTitle("Received"),
           ...(receivedRequests != null
               ? receivedRequests!.isNotEmpty
-              ? receivedRequests!.map((user) => ReceivedFriendRequestTile(
-            user: user,
+              ? receivedRequests!.map((request) => ReceivedFriendRequestTile(
+            request: request,
             onApprove: () async {
-              await onApproveReceived(user.uid);
+              await onApproveReceived(request.uid);
             },
             onReject: () async {
-              await onRejectReceived(user.uid);
+              await onRejectReceived(request.uid);
             },
           ))
               .toList()

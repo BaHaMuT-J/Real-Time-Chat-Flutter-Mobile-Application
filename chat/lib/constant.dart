@@ -11,6 +11,13 @@ const weakBlueColor = Color(0xFF578FCA);
 const lightBlueColor = Color(0xFFA1E3F9);
 const lightBlueGreenColor = Color(0xFFD1F8EF);
 
+class Pair<A, B> {
+  final A first;
+  final B second;
+
+  Pair(this.first, this.second);
+}
+
 String formatTime(DateTime time) {
   final now = DateTime.now();
   if (now.difference(time).inDays == 0) {

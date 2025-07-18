@@ -58,6 +58,9 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
     debugPrint("AppLifecycleState changed to $state");
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       UserPrefs.saveIsLoadUser(false);
+      UserPrefs.saveIsLoadFriend(false);
+      UserPrefs.saveIsLoadSentRequest(false);
+      UserPrefs.saveIsLoadReceivedRequest(false);
       UserPrefs.saveIsLoadChat(false);
     } else if (state == AppLifecycleState.resumed) {
       setNotLoadFromPref();
@@ -67,6 +70,9 @@ class _InitialPageState extends State<InitialPage> with WidgetsBindingObserver {
   void setNotLoadFromPref() {
     debugPrint('Start app from main.dart');
     UserPrefs.saveIsLoadUser(false);
+    UserPrefs.saveIsLoadFriend(false);
+    UserPrefs.saveIsLoadSentRequest(false);
+    UserPrefs.saveIsLoadReceivedRequest(false);
     UserPrefs.saveIsLoadChat(false);
     appStateNotifier.refresh();
   }

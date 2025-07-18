@@ -4,6 +4,7 @@ import 'package:chat/components/edit_profile_sheet.dart';
 import 'package:chat/components/friend_list.dart';
 import 'package:chat/components/friend_request_sheet.dart';
 import 'package:chat/components/profile_avatar.dart';
+import 'package:chat/model/received_friend_request_model.dart';
 import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/pages/login_page.dart';
@@ -30,11 +31,11 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   String username = '';
   String description = '';
   String profileImageUrl = '';
-  bool hasPendingNotifications = true; // Not implement yet
+  bool hasNewRequests = false;
 
   List<UserModel>? friends;
   List<SentFriendRequestModel>? sentFriendRequests;
-  List<UserModel>? receivedFriendRequests;
+  List<ReceivedFriendRequestModel>? receivedFriendRequests;
 
   @override
   void initState() {
@@ -42,12 +43,23 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
     appStateNotifier.addListener(_onAppStateChanged);
     startApp();
     socketService.on("message", _listenToMessage);
+    socketService.on("friend", _listenToFriend);
+    socketService.on("sentRequest", _listenToSentRequest);
+    socketService.on("receivedRequest", _listenToReceivedRequest);
   }
 
   @override
   void dispose() {
     debugPrint('Dispose from Home Info page');
-    socketService.off("message", _listenToMessage);
+    // When dispose after logout, this will have error
+    try {
+      socketService.off("message", _listenToMessage);
+      socketService.off("friend", _listenToFriend);
+      socketService.off("sentRequest", _listenToSentRequest);
+      socketService.off("receivedRequest", _listenToReceivedRequest);
+    } catch (e) {
+      debugPrint('Unregister socket error from Home Info page: $e');
+    }
     appStateNotifier.removeListener(_onAppStateChanged);
     super.dispose();
   }
@@ -62,6 +74,21 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
     LocalNotificationService.showNotificationFromSocket(data);
   }
 
+  void _listenToFriend(data) async {
+    debugPrint('Home info socket friend in $currentUid: $data');
+    UserPrefs.saveIsLoadFriend(false);
+  }
+
+  void _listenToSentRequest(data) async {
+    debugPrint('Home info socket sent request in $currentUid: $data');
+    UserPrefs.saveIsLoadSentRequest(false);
+  }
+
+  void _listenToReceivedRequest(data) async {
+    debugPrint('Home info socket received request in $currentUid: $data');
+    UserPrefs.saveIsLoadReceivedRequest(false);
+  }
+
   void startApp() {
     debugPrint('Start app from home info page');
     Future.wait([
@@ -71,6 +98,9 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
       _loadReceivedFriendRequests(),
     ]).then((_) {
       UserPrefs.saveIsLoadUser(true);
+      UserPrefs.saveIsLoadFriend(true);
+      UserPrefs.saveIsLoadSentRequest(true);
+      UserPrefs.saveIsLoadReceivedRequest(true);
     });
   }
 
@@ -111,9 +141,10 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   Future<void> _loadSentFriendRequests({bool isPreferPref = true}) async {
     try {
-      final allSentFriendRequests = await userFirestoreService.getAllSentFriendRequest(isPreferPref: isPreferPref);
+      final pair = await userFirestoreService.getAllSentFriendRequest(isPreferPref: isPreferPref);
       setState(() {
-        sentFriendRequests = allSentFriendRequests;
+        sentFriendRequests = pair.first;
+        hasNewRequests = pair.second || hasNewRequests;
       });
     } catch (e) {
       if (mounted) {
@@ -126,9 +157,10 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   Future<void> _loadReceivedFriendRequests({bool isPreferPref = true}) async {
     try {
-      final allReceivedFriendRequests = await userFirestoreService.getAllReceivedFriendRequest(isPreferPref: isPreferPref);
+      final pair = await userFirestoreService.getAllReceivedFriendRequest(isPreferPref: isPreferPref);
       setState(() {
-        receivedFriendRequests = allReceivedFriendRequests;
+        receivedFriendRequests = pair.first;
+        hasNewRequests = pair.second || hasNewRequests;
       });
     } catch (e) {
       if (mounted) {
@@ -234,22 +266,42 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
           onCancelSent: (uid) async {
             await userFirestoreService.cancelSentRequest(uid);
             await _loadSentFriendRequests(isPreferPref: false);
+            socketService.emit("sentRequest", {
+              'userId': currentUid,
+              'request': {},
+            });
             setModalState(() {});
           },
           onCloseSent: (uid) async {
             await userFirestoreService.closeSentRequest(uid);
             await _loadSentFriendRequests(isPreferPref: false);
+            socketService.emit("sentRequest", {
+              'userId': currentUid,
+              'request': {},
+            });
             setModalState(() {});
           },
           onApproveReceived: (uid) async {
             await userFirestoreService.acceptFriendRequest(uid);
             await _loadReceivedFriendRequests(isPreferPref: false);
             await _loadFriends(isPreferPref: false);
+            socketService.emit("receivedRequest", {
+              'userId': currentUid,
+              'request': {},
+            });
+            socketService.emit("friend", {
+              'userId': currentUid,
+              'friend': {},
+            });
             setModalState(() {});
           },
           onRejectReceived: (uid) async {
             await userFirestoreService.rejectFriendRequest(uid);
             await _loadReceivedFriendRequests(isPreferPref: false);
+            socketService.emit("receivedRequest", {
+              'userId': currentUid,
+              'request': {},
+            });
             setModalState(() {});
           },
         ),
@@ -328,7 +380,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
       Row(children: [
         Stack(children: [
           IconButton(icon: const Icon(Icons.email, color: strongBlueColor), onPressed: _showFriendRequests),
-          if (hasPendingNotifications)
+          if (hasNewRequests)
             Positioned(
               right: 8, top: 8,
               child: Container(width: 10, height: 10, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),

@@ -139,6 +139,53 @@ const start = async () => {
       }
     });
 
+    socket.on("friend", async (data: FriendMessage) => {
+      console.log(`Socket listen to friend with userId: ${data.userId}`);
+      console.log(data);
+
+      const recipientSocketId = await getSocketId(data.userId);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("friend", data);
+        console.log(
+          `Friend sent to user ${data.userId} with socket ${recipientSocketId}`
+        );
+      } else {
+        console.log(`No socket found for user ${data.userId}`);
+      }
+    });
+
+    socket.on("sentRequest", async (data: SentRequestMessage) => {
+      console.log(`Socket listen to sentRequest with userId: ${data.userId}`);
+      console.log(data);
+
+      const recipientSocketId = await getSocketId(data.userId);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("sentRequest", data);
+        console.log(
+          `SentRequest sent to user ${data.userId} with socket ${recipientSocketId}`
+        );
+      } else {
+        console.log(`No socket found for user ${data.userId}`);
+      }
+    });
+
+    socket.on("receivedRequest", async (data: ReceivedRequestMessage) => {
+      console.log(
+        `Socket listen to receivedRequest with userId: ${data.userId}`
+      );
+      console.log(data);
+
+      const recipientSocketId = await getSocketId(data.userId);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("receivedRequest", data);
+        console.log(
+          `ReceivedRequest sent to user ${data.userId} with socket ${recipientSocketId}`
+        );
+      } else {
+        console.log(`No socket found for user ${data.userId}`);
+      }
+    });
+
     socket.on("disconnect", async () => {
       console.log(`User disconnected: ${socket.id}`);
 

@@ -1,16 +1,16 @@
 import 'package:chat/components/profile_avatar.dart';
 import 'package:chat/constant.dart';
-import 'package:chat/model/user_model.dart';
+import 'package:chat/model/received_friend_request_model.dart';
 import 'package:flutter/material.dart';
 
 class ReceivedFriendRequestTile extends StatefulWidget {
-  final UserModel user;
+  final ReceivedFriendRequestModel request;
   final Future<void> Function() onApprove;
   final Future<void> Function() onReject;
 
   const ReceivedFriendRequestTile({
     super.key,
-    required this.user,
+    required this.request,
     required this.onApprove,
     required this.onReject,
   });
@@ -33,14 +33,14 @@ class _ReceivedFriendRequestTileState extends State<ReceivedFriendRequestTile> {
       ),
       child: ListTile(
         leading: ProfileAvatar(
-          imagePath: widget.user.profileImageUrl,
+          imagePath: widget.request.profileImageUrl,
         ),
         title: Text(
-          widget.user.username,
+          widget.request.username,
           style: const TextStyle(color: strongBlueColor),
         ),
         subtitle: Text(
-          widget.user.description,
+          widget.request.description,
           style: const TextStyle(color: strongBlueColor),
         ),
         trailing: Row(

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:chat/model/chat_model.dart';
+import 'package:chat/model/received_friend_request_model.dart';
 import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -82,19 +83,19 @@ class UserPrefs {
         .toList();
   }
 
-  static Future<void> saveReceivedFriendRequests(List<UserModel> users) async {
+  static Future<void> saveReceivedFriendRequests(List<ReceivedFriendRequestModel> users) async {
     final prefs = await UserPrefs._getPrefs();
     List<String> userJsonList = users.map((user) => jsonEncode(user.toJson())).toList();
     await prefs.setStringList('receivedRequestsList', userJsonList);
   }
 
-  static Future<List<UserModel>> getReceivedFriendRequests() async {
+  static Future<List<ReceivedFriendRequestModel>> getReceivedFriendRequests() async {
     final prefs = await UserPrefs._getPrefs();
     List<String>? userJsonList = prefs.getStringList('receivedRequestsList');
     if (userJsonList == null) return [];
 
     return userJsonList
-        .map((userJson) => UserModel.fromJson(jsonDecode(userJson)))
+        .map((userJson) => ReceivedFriendRequestModel.fromJson(jsonDecode(userJson)))
         .toList();
   }
 
@@ -122,6 +123,36 @@ class UserPrefs {
   static Future<bool?> getIsLoadUser() async {
     final prefs = await UserPrefs._getPrefs();
     return prefs.getBool('isLoadUser');
+  }
+
+  static Future<void> saveIsLoadFriend(bool isLoad) async {
+    final prefs = await UserPrefs._getPrefs();
+    await prefs.setBool('isLoadFriend', isLoad);
+  }
+
+  static Future<bool?> getIsLoadFriend() async {
+    final prefs = await UserPrefs._getPrefs();
+    return prefs.getBool('isLoadFriend');
+  }
+
+  static Future<void> saveIsLoadSentRequest(bool isLoad) async {
+    final prefs = await UserPrefs._getPrefs();
+    await prefs.setBool('isLoadUser', isLoad);
+  }
+
+  static Future<bool?> getIsLoadSentRequest() async {
+    final prefs = await UserPrefs._getPrefs();
+    return prefs.getBool('isLoadSentRequest');
+  }
+
+  static Future<void> saveIsLoadReceivedRequest(bool isLoad) async {
+    final prefs = await UserPrefs._getPrefs();
+    await prefs.setBool('isLoadReceivedRequest', isLoad);
+  }
+
+  static Future<bool?> getIsLoadReceivedRequest() async {
+    final prefs = await UserPrefs._getPrefs();
+    return prefs.getBool('isLoadReceivedRequest');
   }
 
   static Future<void> saveIsLoadChat(bool isLoad) async {

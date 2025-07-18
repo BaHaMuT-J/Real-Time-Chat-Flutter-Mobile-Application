@@ -1,3 +1,5 @@
+import 'package:chat/constant.dart';
+import 'package:chat/model/received_friend_request_model.dart';
 import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
 import 'package:chat/services/chat_firestore.dart';
@@ -88,7 +90,7 @@ class UserFirestoreService {
 
   Future<List<UserModel>> loadFriends({ bool isPreferPref = true}) async {
     final friendsListRef = await UserPrefs.getFriendsList();
-    final isLoadPref = await UserPrefs.getIsLoadUser();
+    final isLoadPref = await UserPrefs.getIsLoadFriend();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load friends list from Pref');
       return friendsListRef;
@@ -124,12 +126,12 @@ class UserFirestoreService {
     return friendUsers;
   }
 
-  Future<List<SentFriendRequestModel>> getAllSentFriendRequest({ bool isPreferPref = true}) async {
+  Future<Pair<List<SentFriendRequestModel>, bool>> getAllSentFriendRequest({ bool isPreferPref = true}) async {
     final sentFriendRequestsListRef = await UserPrefs.getSentFriendRequests();
-    final isLoadPref = await UserPrefs.getIsLoadUser();
+    final isLoadPref = await UserPrefs.getIsLoadSentRequest();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load sent requests from Pref');
-      return sentFriendRequestsListRef;
+      return Pair(sentFriendRequestsListRef, false);
     }
 
     debugPrint('Load sent requests from Firestore');
@@ -155,16 +157,18 @@ class UserFirestoreService {
       requests.add(SentFriendRequestModel(user: userModel, status: data['status']));
     }
 
+    requests.sort((a, b) => a.user.username.compareTo(b.user.username));
+
     UserPrefs.saveSentFriendRequests(requests);
-    return requests;
+    return Pair(requests, sentFriendRequestsListRef.length != requests.length);
   }
 
-  Future<List<UserModel>> getAllReceivedFriendRequest({ bool isPreferPref = true}) async {
+  Future<Pair<List<ReceivedFriendRequestModel>, bool>> getAllReceivedFriendRequest({ bool isPreferPref = true}) async {
     final receivedFriendRequestsListRef = await UserPrefs.getReceivedFriendRequests();
-    final isLoadPref = await UserPrefs.getIsLoadUser();
+    final isLoadPref = await UserPrefs.getIsLoadReceivedRequest();
     if (isPreferPref && isLoadPref != null && isLoadPref) {
       debugPrint('Load received requests from Pref');
-      return receivedFriendRequestsListRef;
+      return Pair(receivedFriendRequestsListRef, false);
     }
 
     debugPrint('Load received requests from Firestore');
@@ -176,7 +180,7 @@ class UserFirestoreService {
         .collection('received_friend_requests')
         .get();
 
-    final List<UserModel> requests = [];
+    final List<ReceivedFriendRequestModel> requests = [];
 
     for (var doc in snapshot.docs) {
       final data = doc.data();
@@ -185,16 +189,18 @@ class UserFirestoreService {
       final userSnap = await userRef.get();
       final userData = userSnap.data() as Map<String, dynamic>;
       userData['uid'] = userSnap.id;
-      final userModel = UserModel.fromJson(userData);
+      final requestModel = ReceivedFriendRequestModel.fromJson(userData);
 
-      requests.add(userModel);
+      requests.add(requestModel);
     }
 
+    requests.sort((a, b) => a.username.compareTo(b.username));
+
     UserPrefs.saveReceivedFriendRequests(requests);
-    return requests;
+    return Pair(requests, receivedFriendRequestsListRef.length != requests.length);
   }
 
-  Future<void> sendFriendRequest(String receiverUid) async {
+  Future<Pair<SentFriendRequestModel, ReceivedFriendRequestModel>> sendFriendRequest(String receiverUid) async {
     final currentUid = _auth.currentUser!.uid;
 
     final currentUserRef = _firestore.collection('users').doc(currentUid);
@@ -218,6 +224,32 @@ class UserFirestoreService {
         .set({
           'user': currentUserRef,
         });
+
+    final currentUserSnap = await currentUserRef.get();
+    final receiverUserSnap = await receiverUserRef.get();
+
+    final currentUserData = currentUserSnap.data()!;
+    currentUserData['uid'] = currentUserSnap.id;
+
+    final receiverUserData = receiverUserSnap.data()!;
+    receiverUserData['uid'] = receiverUserSnap.id;
+
+    final currentUserModel = UserModel.fromJson(currentUserData);
+    final receiverUserModel = UserModel.fromJson(receiverUserData);
+
+    final sentRequest = SentFriendRequestModel(
+      user: receiverUserModel,
+      status: 'Pending...',
+    );
+
+    final receivedRequest = ReceivedFriendRequestModel(
+      uid: currentUserModel.uid,
+      username: currentUserModel.username,
+      description: currentUserModel.description,
+      profileImageUrl: currentUserModel.profileImageUrl,
+    );
+
+    return Pair(sentRequest, receivedRequest);
   }
 
   Future<List<UserModel>> searchUsers(String keyword) async {

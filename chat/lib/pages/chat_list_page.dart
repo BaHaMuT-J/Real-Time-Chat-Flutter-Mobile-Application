@@ -31,6 +31,9 @@ class _ChatListPageState extends State<ChatListPage> {
     appStateNotifier.addListener(_onAppStateChanged);
     startApp();
     socketService.on("message", _listenToMessage);
+    socketService.on("friend", _listenToFriend);
+    socketService.on("sentRequest", _listenToSentRequest);
+    socketService.on("receivedRequest", _listenToReceivedRequest);
 
     // Navigate to Chat page when user tap notification
     if (widget.payload != null) {
@@ -52,6 +55,9 @@ class _ChatListPageState extends State<ChatListPage> {
     // When dispose after logout, this will have error
     try {
       socketService.off("message", _listenToMessage);
+      socketService.off("friend", _listenToFriend);
+      socketService.off("sentRequest", _listenToSentRequest);
+      socketService.off("receivedRequest", _listenToReceivedRequest);
     } catch (e) {
       debugPrint('Unregister socket error from Chat list page: $e');
     }
@@ -66,7 +72,6 @@ class _ChatListPageState extends State<ChatListPage> {
 
   void _listenToMessage(data) async {
     try {
-      debugPrint('Chat list socket message in $currentUid: $data');
       final chatId = data['chatId'] as String;
       final message = MessageModel.fromJson(jsonDecode(data['message']));
       final chatIndex = allChats?.indexWhere((chat) => chat.chatId == chatId);
@@ -90,6 +95,21 @@ class _ChatListPageState extends State<ChatListPage> {
     } catch (e) {
       debugPrint('Error handling incoming socket message: $e');
     }
+  }
+
+  void _listenToFriend(data) async {
+    debugPrint('Chat list socket friend in $currentUid: $data');
+    UserPrefs.saveIsLoadFriend(false);
+  }
+
+  void _listenToSentRequest(data) async {
+    debugPrint('Chat list socket sent request in $currentUid: $data');
+    UserPrefs.saveIsLoadSentRequest(false);
+  }
+
+  void _listenToReceivedRequest(data) async {
+    debugPrint('Chat list socket received request in $currentUid: $data');
+    UserPrefs.saveIsLoadReceivedRequest(false);
   }
 
   void startApp() {

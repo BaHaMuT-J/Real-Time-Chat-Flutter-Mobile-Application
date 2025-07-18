@@ -18,3 +18,18 @@ interface AllReadMessage {
   chatId: string;
   readerId: string;
 }
+
+interface FriendMessage {
+  userId: string;
+  request: object;
+}
+
+interface SentRequestMessage {
+  userId: string;
+  request: object;
+}
+
+interface ReceivedRequestMessage {
+  userId: string;
+  request: object;
+}
