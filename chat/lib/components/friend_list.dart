@@ -7,12 +7,14 @@ class FriendsList extends StatefulWidget {
   final List<UserModel> friends;
   final Future<void> Function(UserModel friend)? onUnfriend;
   final double fontSize;
+  final ThemeColors color;
 
   const FriendsList({
     super.key,
     required this.friends,
     this.onUnfriend,
     required this.fontSize,
+    required this.color,
   });
 
   @override
@@ -36,7 +38,7 @@ class _FriendsListState extends State<FriendsList> {
                 style: TextStyle(
                   fontSize: 18 + widget.fontSize,
                   fontWeight: FontWeight.bold,
-                  color: strongBlueColor,
+                  color: widget.color.colorShade1,
                 ),
               ),
               subtitle: Text(
@@ -44,7 +46,7 @@ class _FriendsListState extends State<FriendsList> {
                 style: TextStyle(
                   fontSize: 16 + widget.fontSize,
                   fontWeight: FontWeight.w600,
-                  color: weakBlueColor,
+                  color: widget.color.colorShade2,
                 ),
               ),
               trailing: isLoading

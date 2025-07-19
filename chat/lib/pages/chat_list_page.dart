@@ -11,6 +11,7 @@ import 'package:chat/services/firebase_message.dart';
 import 'package:chat/services/local_notification.dart';
 import 'package:chat/userPref.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key, this.payload});
@@ -180,15 +181,17 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final color = context.watch<ThemeColorProvider>().theme;
+
     return Scaffold(
-      backgroundColor: lightBlueGreenColor,
+      backgroundColor: color.colorShade4,
       appBar: AppBar(
-        backgroundColor: lightBlueColor,
-        title: const Text("Chat", style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600, color: strongBlueColor)),
+        backgroundColor: color.colorShade3,
+        title: Text("Chat", style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600, color: color.colorShade1)),
         actions: [
-          IconButton(icon: const Icon(
+          IconButton(icon: Icon(
               Icons.settings,
-              color: strongBlueColor),
+              color: color.colorShade1),
               onPressed: () {
                 showPreferencesSheet(
                   context: context,
@@ -201,7 +204,7 @@ class _ChatListPageState extends State<ChatListPage> {
                 );
               }
           ),
-          IconButton(icon: const Icon(Icons.logout, color: strongBlueColor), onPressed: _handleLogOut,),
+          IconButton(icon: Icon(Icons.logout, color: color.colorShade1), onPressed: _handleLogOut,),
         ],
       ),
       body: allChats == null
@@ -210,9 +213,9 @@ class _ChatListPageState extends State<ChatListPage> {
           ? const Center(child: Text("You have no chats"))
           : ListView.separated(
         itemCount: allChats!.length,
-        separatorBuilder: (_, __) => const Divider(
+        separatorBuilder: (_, __) => Divider(
           thickness: 2,
-          color: strongBlueColor,
+          color: color.colorShade1,
         ),
         itemBuilder: (context, index) {
           final chat = allChats![index];

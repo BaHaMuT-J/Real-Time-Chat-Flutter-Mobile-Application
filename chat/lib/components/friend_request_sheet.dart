@@ -13,6 +13,7 @@ class FriendRequestsSheet extends StatelessWidget {
   final Future<void> Function(String uid) onApproveReceived;
   final Future<void> Function(String uid) onRejectReceived;
   final double fontSize;
+  final ThemeColors color;
 
   const FriendRequestsSheet({
     super.key,
@@ -23,6 +24,7 @@ class FriendRequestsSheet extends StatelessWidget {
     required this.onApproveReceived,
     required this.onRejectReceived,
     required this.fontSize,
+    required this.color,
   });
 
   @override
@@ -46,12 +48,13 @@ class FriendRequestsSheet extends StatelessWidget {
               await onCloseSent(request.user.uid);
             },
             fontSize: fontSize,
+            color: color,
           ))
               .toList()
               : [
             Text(
               "You have no sent friend request",
-              style: TextStyle(fontSize: 14 + fontSize, fontWeight: FontWeight.w500, color: strongBlueColor),
+              style: TextStyle(fontSize: 14 + fontSize, fontWeight: FontWeight.w500, color: color.colorShade1),
             )
           ]
               : [_loading()]
@@ -69,12 +72,13 @@ class FriendRequestsSheet extends StatelessWidget {
               await onRejectReceived(request.uid);
             },
             fontSize: fontSize,
+            color: color,
           ))
               .toList()
               : [
             Text(
               "You have no received friend request",
-              style: TextStyle(fontSize: 14 + fontSize, fontWeight: FontWeight.w500, color: strongBlueColor),
+              style: TextStyle(fontSize: 14 + fontSize, fontWeight: FontWeight.w500, color: color.colorShade1),
             )
           ]
               : [_loading()]
@@ -86,11 +90,11 @@ class FriendRequestsSheet extends StatelessWidget {
 
   Widget _sectionTitle(String title) => Text(
     title,
-    style: TextStyle(fontSize: 20 + fontSize, fontWeight: FontWeight.bold, color: strongBlueColor),
+    style: TextStyle(fontSize: 20 + fontSize, fontWeight: FontWeight.bold, color: color.colorShade1),
   );
   Widget _subTitle(String subtitle) => Text(
     subtitle,
-    style: TextStyle(fontSize: 16 + fontSize, fontWeight: FontWeight.w600, color: weakBlueColor),
+    style: TextStyle(fontSize: 16 + fontSize, fontWeight: FontWeight.w600, color: color.colorShade2),
   );
   Widget _loading() => const Center(child: CircularProgressIndicator());
 }

@@ -9,8 +9,14 @@ import 'package:chat/services/user_firestore.dart';
 class AddFriendSheet extends StatefulWidget {
   final Future<void> Function(SentFriendRequestModel sentRequest, ReceivedFriendRequestModel receivedRequest) onRequestSent;
   final double fontSize;
+  final ThemeColors color;
 
-  const AddFriendSheet({super.key, required this.onRequestSent, required this.fontSize});
+  const AddFriendSheet({
+    super.key,
+    required this.onRequestSent,
+    required this.fontSize,
+    required this.color,
+});
 
   @override
   State<AddFriendSheet> createState() => _AddFriendSheetState();
@@ -47,7 +53,7 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                 _searchInput(),
                 const SizedBox(height: 8),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: strongBlueColor),
+                  style: ElevatedButton.styleFrom(backgroundColor: widget.color.colorShade1),
                   onPressed: _performSearch,
                   child: Text("Search", style: TextStyle(color: Colors.white, fontSize: 14 + widget.fontSize)),
                 ),
@@ -66,8 +72,8 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                             leading: ProfileAvatar(
                               imagePath: user.profileImageUrl,
                             ),
-                            title: Text(user.username, style: TextStyle(fontSize: 18 + widget.fontSize, fontWeight: FontWeight.bold, color: strongBlueColor)),
-                            subtitle: Text(user.description, style: TextStyle(fontSize: 16 + widget.fontSize, fontWeight: FontWeight.w600, color: weakBlueColor)),
+                            title: Text(user.username, style: TextStyle(fontSize: 18 + widget.fontSize, fontWeight: FontWeight.bold, color: widget.color.colorShade1)),
+                            subtitle: Text(user.description, style: TextStyle(fontSize: 16 + widget.fontSize, fontWeight: FontWeight.w600, color: widget.color.colorShade2)),
                             trailing: isSent
                               ? Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -82,7 +88,7 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                                 : IconButton(
-                                  icon: const Icon(Icons.person_add, color: strongBlueColor),
+                                  icon: Icon(Icons.person_add, color: widget.color.colorShade1),
                                   onPressed: () async {
                                     setState(() {
                                       loadingRequests.add(user.uid);
@@ -100,7 +106,7 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                           );
                         }).toList(),
                         )
-                        : Text("No users found.", style: TextStyle(color: strongBlueColor, fontSize: 16 + widget.fontSize, fontWeight: FontWeight.w600));
+                        : Text("No users found.", style: TextStyle(color: widget.color.colorShade1, fontSize: 16 + widget.fontSize, fontWeight: FontWeight.w600));
                     },
                   ),
               ],
@@ -126,12 +132,12 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
         controller: searchController,
         decoration: InputDecoration(
           labelText: "Search by username",
-          labelStyle: const TextStyle(color: strongBlueColor),
-          prefixIcon: const Icon(Icons.search, color: strongBlueColor),
-          enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: strongBlueColor)),
-          focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: weakBlueColor, width: 2)),
+          labelStyle: TextStyle(color: widget.color.colorShade1),
+          prefixIcon: Icon(Icons.search, color: widget.color.colorShade1),
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: widget.color.colorShade1)),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: widget.color.colorShade2, width: 2)),
         ),
-        style: const TextStyle(color: strongBlueColor),
-        cursorColor: strongBlueColor,
+        style: TextStyle(color: widget.color.colorShade1),
+        cursorColor: widget.color.colorShade1,
       );
 }

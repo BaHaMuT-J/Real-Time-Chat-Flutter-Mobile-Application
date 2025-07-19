@@ -34,6 +34,16 @@ class UserPrefs {
     return prefs.getDouble('fontSize') ?? 0;
   }
 
+  static Future<void> saveThemeColor(int index) async {
+    final prefs = await UserPrefs._getPrefs();
+    await prefs.setInt('themeColor', index);
+  }
+
+  static Future<int> getThemeColor() async {
+    final prefs = await UserPrefs._getPrefs();
+    return prefs.getInt('themeColor') ?? 0;
+  }
+
   static Future<void> saveCredential(String email, String password) async {
     final prefs = await UserPrefs._getPrefs();
     await prefs.setString('email', email);

@@ -5,7 +5,6 @@ import 'package:chat/components/edit_profile_sheet.dart';
 import 'package:chat/components/friend_list.dart';
 import 'package:chat/components/friend_request_sheet.dart';
 import 'package:chat/components/profile_avatar.dart';
-import 'package:chat/components/set_preference_sheet.dart';
 import 'package:chat/model/received_friend_request_model.dart';
 import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
@@ -17,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:chat/constant.dart';
 import 'package:chat/userPref.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
 class HomeInfoPage extends StatefulWidget {
   const HomeInfoPage({super.key});
@@ -261,14 +261,15 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
     );
   }
 
-  void _addFriendSheet() {
+  void _addFriendSheet(ThemeColors color) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: lightBlueGreenColor,
+      backgroundColor: color.colorShade4,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => AddFriendSheet(
         fontSize: fontSize,
+        color: color,
         onRequestSent: (sentRequest, receivedRequest) async {
           // Create own new request
           setState(() {
@@ -288,14 +289,15 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
     );
   }
 
-  void _showFriendRequests() {
+  void _showFriendRequests(ThemeColors color) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: lightBlueGreenColor,
+      backgroundColor: color.colorShade4,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => StatefulBuilder(
         builder: (context, setModalState) => FriendRequestsSheet(
           fontSize: fontSize,
+          color: color,
           sentRequests: sentFriendRequests,
           receivedRequests: receivedFriendRequests,
           onCancelSent: (receiverUid) async {
@@ -391,15 +393,17 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final color = context.watch<ThemeColorProvider>().theme;
+
     return Scaffold(
-      backgroundColor: lightBlueGreenColor,
+      backgroundColor: color.colorShade4,
       appBar: AppBar(
-        backgroundColor: lightBlueColor,
-        title: const Text("Home", style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600, color: strongBlueColor)),
+        backgroundColor: color.colorShade3,
+        title: Text("Home", style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600, color: color.colorShade1)),
         actions: [
-          IconButton(icon: const Icon(
+          IconButton(icon: Icon(
             Icons.settings,
-            color: strongBlueColor),
+            color: color.colorShade1),
             onPressed: () {
               showPreferencesSheet(
                 context: context,
@@ -412,7 +416,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
               );
             }
           ),
-          IconButton(icon: const Icon(Icons.logout, color: strongBlueColor), onPressed: _handleLogOut),
+          IconButton(icon: Icon(Icons.logout, color: color.colorShade1), onPressed: _handleLogOut),
         ],
       ),
       body: email.isEmpty
@@ -420,14 +424,15 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
         : ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Center(child: _profileSection()),
+            Center(child: _profileSection(color)),
             const SizedBox(height: 24),
-            _friendsSection(),
+            _friendsSection(color),
             const SizedBox(height: 12),
             friends != null
                 ? friends!.isNotEmpty
                   ? FriendsList(
               fontSize: fontSize,
+              color: color,
               friends: friends!,
               onUnfriend: (UserModel friend) async {
                 try {
@@ -471,7 +476,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
               },
             )
                   : Center(
-                      child: Text("You have no friend yet", style: TextStyle(fontSize: 18 + fontSize, fontWeight: FontWeight.w500, color: strongBlueColor))
+                      child: Text("You have no friend yet", style: TextStyle(fontSize: 18 + fontSize, fontWeight: FontWeight.w500, color: color.colorShade1))
                     )
                 : _loading(),
           ],
@@ -479,10 +484,10 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
     );
   }
 
-  Widget _profileSection() => Column(children: [
+  Widget _profileSection(ThemeColors color) => Column(children: [
     ProfileAvatar(imagePath: profileImageUrl, radius: 50,),
     const SizedBox(height: 12),
-    Text(username, style: TextStyle(fontSize: 24 + fontSize , fontWeight: FontWeight.bold, color: strongBlueColor)),
+    Text(username, style: TextStyle(fontSize: 24 + fontSize , fontWeight: FontWeight.bold, color: color.colorShade1)),
     Text(email, style: TextStyle(fontSize: 16 + fontSize)),
     Text(description, style: TextStyle(fontSize: 14 + fontSize, fontStyle: FontStyle.italic)),
     const SizedBox(height: 12),
@@ -494,20 +499,20 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
     ),
   ]);
 
-  Widget _friendsSection() => Row(
+  Widget _friendsSection(ThemeColors color) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      Text("Friends", style: TextStyle(fontSize: 20 + fontSize, fontWeight: FontWeight.bold, color: strongBlueColor)),
+      Text("Friends", style: TextStyle(fontSize: 20 + fontSize, fontWeight: FontWeight.bold, color: color.colorShade1)),
       Row(children: [
         Stack(children: [
-          IconButton(icon: const Icon(Icons.email, color: strongBlueColor), onPressed: _showFriendRequests),
+          IconButton(icon: Icon(Icons.email, color: color.colorShade1), onPressed: () => _showFriendRequests(color)),
           if (hasNewRequests)
             Positioned(
               right: 8, top: 8,
               child: Container(width: 10, height: 10, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
             ),
         ]),
-        IconButton(icon: const Icon(Icons.person_add, color: strongBlueColor), onPressed: _addFriendSheet),
+        IconButton(icon: Icon(Icons.person_add, color: color.colorShade1), onPressed: () => _addFriendSheet(color)),
       ]),
     ],
   );

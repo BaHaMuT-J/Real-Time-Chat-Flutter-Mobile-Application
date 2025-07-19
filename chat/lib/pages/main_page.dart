@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:chat/pages/chat_list_page.dart';
 import 'package:chat/pages/home_info_page.dart';
 import 'package:chat/constant.dart';
+import 'package:provider/provider.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key, this.payload});
@@ -37,16 +38,17 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
+    final color = context.watch<ThemeColorProvider>().theme;
+
     return Scaffold(
       body: _pages?[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        backgroundColor: lightBlueColor,
+        backgroundColor: color.colorShade3,
         onTap: (index) => setState(() => _selectedIndex = index),
-        selectedItemColor: strongBlueColor,
+        selectedItemColor: color.colorShade1,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(

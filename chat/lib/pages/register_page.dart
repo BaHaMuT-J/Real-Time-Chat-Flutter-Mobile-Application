@@ -1,7 +1,9 @@
 import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
+import 'package:chat/userPref.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -91,8 +93,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final color = context.watch<ThemeColorProvider>().theme;
+
     return Scaffold(
-      backgroundColor: lightBlueColor,
+      backgroundColor: color.colorShade3,
       body: Center(
         child: Container(
           padding: const EdgeInsets.all(24),
@@ -113,18 +117,18 @@ class _RegisterPageState extends State<RegisterPage> {
             children: [
               Text(
                 'Register',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: strongBlueColor,
+                  color: color.colorShade1,
                 ),
               ),
               const SizedBox(height: 24),
               TextField(
                 controller: emailController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   filled: true,
-                  fillColor: lightBlueGreenColor,
+                  fillColor: color.colorShade4,
                   hintText: 'Email',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -136,9 +140,9 @@ class _RegisterPageState extends State<RegisterPage> {
               TextField(
                 obscureText: true,
                 controller: usernameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   filled: true,
-                  fillColor: lightBlueGreenColor,
+                  fillColor: color.colorShade4,
                   hintText: 'Username',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -150,9 +154,9 @@ class _RegisterPageState extends State<RegisterPage> {
               TextField(
                 obscureText: true,
                 controller: passwordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   filled: true,
-                  fillColor: lightBlueGreenColor,
+                  fillColor: color.colorShade4,
                   hintText: 'Password',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -164,9 +168,9 @@ class _RegisterPageState extends State<RegisterPage> {
               TextField(
                 obscureText: true,
                 controller: confirmPasswordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   filled: true,
-                  fillColor: lightBlueGreenColor,
+                  fillColor: color.colorShade4,
                   hintText: 'Confirmed Password',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -183,7 +187,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    backgroundColor: strongBlueColor,
+                    backgroundColor: color.colorShade1,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () async {
@@ -216,8 +220,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       const TextSpan(text: 'Already have an account? '),
                       TextSpan(
                         text: 'Login',
-                        style: const TextStyle(
-                          color: strongBlueColor,
+                        style: TextStyle(
+                          color: color.colorShade1,
                           decoration: TextDecoration.underline,
                         ),
                       ),

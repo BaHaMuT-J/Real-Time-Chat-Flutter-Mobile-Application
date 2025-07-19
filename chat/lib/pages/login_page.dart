@@ -4,6 +4,7 @@ import 'package:chat/pages/register_page.dart';
 import 'package:chat/services/firebase_message.dart';
 import 'package:chat/userPref.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -75,8 +76,10 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final color = context.watch<ThemeColorProvider>().theme;
+
     return Scaffold(
-      backgroundColor: lightBlueColor,
+      backgroundColor: color.colorShade3,
       body: Center(
         child: Container(
           padding: const EdgeInsets.all(24),
@@ -95,20 +98,20 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'Login',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: strongBlueColor,
+                  color: color.colorShade1,
                 ),
               ),
               const SizedBox(height: 24),
               TextField(
                 controller: emailController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   filled: true,
-                  fillColor: lightBlueGreenColor,
+                  fillColor: color.colorShade4,
                   hintText: 'Email',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -120,9 +123,9 @@ class _LoginPageState extends State<LoginPage> {
               TextField(
                 controller: passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   filled: true,
-                  fillColor: lightBlueGreenColor,
+                  fillColor: color.colorShade4,
                   hintText: 'Password',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -139,7 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    backgroundColor: strongBlueColor,
+                    backgroundColor: color.colorShade1,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: _handleLogin,
@@ -171,7 +174,7 @@ class _LoginPageState extends State<LoginPage> {
                       TextSpan(
                         text: 'Register',
                         style: TextStyle(
-                          color: strongBlueColor,
+                          color: color.colorShade1,
                           decoration: TextDecoration.underline,
                         ),
                       ),

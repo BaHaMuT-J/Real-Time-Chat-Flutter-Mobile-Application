@@ -8,10 +8,54 @@ import 'package:flutter/material.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-const strongBlueColor = Color(0xFF003285);
-const weakBlueColor = Color(0xFF578FCA);
-const lightBlueColor = Color(0xFFA1E3F9);
-const lightBlueGreenColor = Color(0xFFD1F8EF);
+class ThemeColors {
+  final Color colorShade1;
+  final Color colorShade2;
+  final Color colorShade3;
+  final Color colorShade4;
+
+  const ThemeColors({
+    required this.colorShade1,
+    required this.colorShade2,
+    required this.colorShade3,
+    required this.colorShade4,
+  });
+}
+
+const allThemeColors = [
+  ThemeColors(
+    colorShade1: Color(0xFF003285),
+    colorShade2: Color(0xFF578FCA),
+    colorShade3: Color(0xFFA1E3F9),
+    colorShade4: Color(0xFFD1F8EF),
+  ),
+];
+
+class ThemeColorProvider extends ChangeNotifier {
+  ThemeColors _color = allThemeColors[0];
+
+  ThemeColors get theme => _color;
+
+  ThemeColorProvider() {
+    _loadThemeFromPrefs();
+  }
+
+  Future<void> _loadThemeFromPrefs() async {
+    final index = await UserPrefs.getThemeColor();
+    _color = allThemeColors[index];
+    notifyListeners();
+  }
+
+  Future<void> setThemeByIndex(int index) async {
+    _color = allThemeColors[index];
+    await UserPrefs.saveThemeColor(index);
+    notifyListeners();
+  }
+}
+
+// final theme = context.watch<ThemeProvider>().theme;
+//
+// context.read<ThemeProvider>().setThemeByIndex(1);
 
 class Pair<A, B> {
   final A first;

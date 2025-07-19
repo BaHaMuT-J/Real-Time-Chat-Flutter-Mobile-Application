@@ -1,4 +1,3 @@
-import 'package:chat/constant.dart';
 import 'package:chat/main.dart';
 import 'package:chat/userPref.dart';
 import 'package:flutter/material.dart';
@@ -50,7 +49,7 @@ class _OnBoardPageState extends State<OnBoardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: lightBlueGreenColor,
+      backgroundColor: Color(0xFFD1F8EF),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -74,8 +73,8 @@ class _OnBoardPageState extends State<OnBoardPage> {
                   dotHeight: 12,
                   dotWidth: 12,
                   spacing: 16,
-                  activeDotColor: strongBlueColor,
-                  dotColor: weakBlueColor,
+                  activeDotColor: Color(0xFF003285),
+                  dotColor: Color(0xFF578FCA),
                 ),
                 onDotClicked: (index) async {
                   _controller.animateToPage(
@@ -95,11 +94,11 @@ class _OnBoardPageState extends State<OnBoardPage> {
                       duration: const Duration(milliseconds: 500),
                       curve: Curves.ease,
                     ),
-                    child: const Text("Skip", style: TextStyle(color: strongBlueColor)),
+                    child: const Text("Skip", style: TextStyle(color: Color(0xFF003285))),
                   ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: strongBlueColor,
+                      backgroundColor: Color(0xFF003285),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -147,14 +146,14 @@ class OnboardingContent extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(image, size: 120, color: strongBlueColor),
+        Icon(image, size: 120, color: Color(0xFF003285)),
         const SizedBox(height: 32),
         Text(
           title,
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: strongBlueColor,
+            color: Color(0xFF003285),
           ),
           textAlign: TextAlign.center,
         ),
@@ -164,7 +163,7 @@ class OnboardingContent extends StatelessWidget {
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: weakBlueColor,
+            color: Color(0xFF578FCA),
           ),
           textAlign: TextAlign.center,
         ),

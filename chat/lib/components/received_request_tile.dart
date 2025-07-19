@@ -8,6 +8,7 @@ class ReceivedFriendRequestTile extends StatefulWidget {
   final Future<void> Function() onApprove;
   final Future<void> Function() onReject;
   final double fontSize;
+  final ThemeColors color;
 
   const ReceivedFriendRequestTile({
     super.key,
@@ -15,6 +16,7 @@ class ReceivedFriendRequestTile extends StatefulWidget {
     required this.onApprove,
     required this.onReject,
     required this.fontSize,
+    required this.color,
   });
 
   @override
@@ -30,7 +32,7 @@ class _ReceivedFriendRequestTileState extends State<ReceivedFriendRequestTile> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: lightBlueColor.withValues(alpha: 0.5),
+        color: widget.color.colorShade3.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
@@ -39,11 +41,11 @@ class _ReceivedFriendRequestTileState extends State<ReceivedFriendRequestTile> {
         ),
         title: Text(
           widget.request.username,
-          style: TextStyle(color: strongBlueColor, fontSize: 14 + widget.fontSize),
+          style: TextStyle(color: widget.color.colorShade1, fontSize: 14 + widget.fontSize),
         ),
         subtitle: Text(
           widget.request.description,
-          style: TextStyle(color: strongBlueColor, fontSize: 14 + widget.fontSize),
+          style: TextStyle(color: widget.color.colorShade1, fontSize: 14 + widget.fontSize),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

@@ -8,6 +8,7 @@ class SentFriendRequestTile extends StatefulWidget {
   final Future<void> Function() onCancel;
   final Future<void> Function() onClose;
   final double fontSize;
+  final ThemeColors color;
 
   const SentFriendRequestTile({
     super.key,
@@ -15,6 +16,7 @@ class SentFriendRequestTile extends StatefulWidget {
     required this.onCancel,
     required this.onClose,
     required this.fontSize,
+    required this.color,
   });
 
   @override
@@ -29,7 +31,7 @@ class _SentFriendRequestTileState extends State<SentFriendRequestTile> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: lightBlueColor.withValues(alpha: 0.5),
+        color: widget.color.colorShade3.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
@@ -52,11 +54,11 @@ class _SentFriendRequestTileState extends State<SentFriendRequestTile> {
         ),
         title: Text(
           widget.request.user.username,
-          style: TextStyle(color: strongBlueColor, fontSize: 14 + widget.fontSize),
+          style: TextStyle(color: widget.color.colorShade1, fontSize: 14 + widget.fontSize),
         ),
         subtitle: Text(
           widget.request.status,
-          style: TextStyle(color: strongBlueColor, fontSize: 14 + widget.fontSize),
+          style: TextStyle(color: widget.color.colorShade1, fontSize: 14 + widget.fontSize),
         ),
         trailing: _isLoading
             ? const SizedBox(

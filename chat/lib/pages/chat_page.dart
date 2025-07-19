@@ -7,6 +7,7 @@ import 'package:chat/model/chat_model.dart';
 import 'package:chat/model/message_model.dart';
 import 'package:chat/services/local_notification.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ChatPage extends StatefulWidget {
   final ChatModel chat;
@@ -246,16 +247,18 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final color = context.watch<ThemeColorProvider>().theme;
+
     return Scaffold(
-      backgroundColor: lightBlueGreenColor,
+      backgroundColor: color.colorShade4,
       appBar: AppBar(
-        backgroundColor: lightBlueColor,
+        backgroundColor: color.colorShade3,
         title: Text(
           widget.chat.chatName ?? (widget.chatName ?? "Chat"),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.w600,
-            color: strongBlueColor,
+            color: color.colorShade1,
           ),
         ),
       ),
@@ -361,7 +364,7 @@ class _ChatPageState extends State<ChatPage> {
           SafeArea(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: lightBlueColor,
+              color: color.colorShade3,
               child: Row(
                 children: [
                   Expanded(
@@ -370,8 +373,8 @@ class _ChatPageState extends State<ChatPage> {
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
                         hintText: "Type a message...",
-                        hintStyle: const TextStyle(
-                          color: strongBlueColor,
+                        hintStyle: TextStyle(
+                          color: color.colorShade1,
                           fontWeight: FontWeight.w500,
                         ),
                         border: OutlineInputBorder(
