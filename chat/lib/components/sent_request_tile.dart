@@ -7,12 +7,14 @@ class SentFriendRequestTile extends StatefulWidget {
   final SentFriendRequestModel request;
   final Future<void> Function() onCancel;
   final Future<void> Function() onClose;
+  final double fontSize;
 
   const SentFriendRequestTile({
     super.key,
     required this.request,
     required this.onCancel,
     required this.onClose,
+    required this.fontSize,
   });
 
   @override
@@ -50,11 +52,11 @@ class _SentFriendRequestTileState extends State<SentFriendRequestTile> {
         ),
         title: Text(
           widget.request.user.username,
-          style: const TextStyle(color: strongBlueColor),
+          style: TextStyle(color: strongBlueColor, fontSize: 14 + widget.fontSize),
         ),
         subtitle: Text(
           widget.request.status,
-          style: const TextStyle(color: strongBlueColor),
+          style: TextStyle(color: strongBlueColor, fontSize: 14 + widget.fontSize),
         ),
         trailing: _isLoading
             ? const SizedBox(
@@ -71,8 +73,8 @@ class _SentFriendRequestTileState extends State<SentFriendRequestTile> {
             },
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text('Cancel', style: TextStyle(color: Colors.red)),
+              children: [
+                Text('Cancel', style: TextStyle(color: Colors.red, fontSize: 14 + widget.fontSize)),
                 SizedBox(width: 4),
                 Icon(Icons.close, color: Colors.red),
               ],
@@ -86,8 +88,8 @@ class _SentFriendRequestTileState extends State<SentFriendRequestTile> {
             },
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text('Close', style: TextStyle(color: Colors.grey)),
+              children: [
+                Text('Close', style: TextStyle(color: Colors.grey, fontSize: 14 + widget.fontSize)),
                 SizedBox(width: 4),
                 Icon(Icons.close, color: Colors.grey),
               ],

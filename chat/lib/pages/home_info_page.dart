@@ -5,6 +5,7 @@ import 'package:chat/components/edit_profile_sheet.dart';
 import 'package:chat/components/friend_list.dart';
 import 'package:chat/components/friend_request_sheet.dart';
 import 'package:chat/components/profile_avatar.dart';
+import 'package:chat/components/set_preference_sheet.dart';
 import 'package:chat/model/received_friend_request_model.dart';
 import 'package:chat/model/sent_friend_request_model.dart';
 import 'package:chat/model/user_model.dart';
@@ -32,6 +33,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   String description = '';
   String profileImageUrl = '';
   bool hasNewRequests = false;
+  double fontSize = 0;
 
   List<UserModel>? friends;
   List<SentFriendRequestModel>? sentFriendRequests;
@@ -115,8 +117,10 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
       UserPrefs.saveIsLoadReceivedRequest(true);
     });
     final prefHasNewRequest = await UserPrefs.getHasNewRequest();
+    final prefFontSize = await UserPrefs.getFontSize();
     setState(() {
       hasNewRequests = prefHasNewRequest;
+      fontSize = prefFontSize;
     });
   }
 
@@ -264,6 +268,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
       backgroundColor: lightBlueGreenColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => AddFriendSheet(
+        fontSize: fontSize,
         onRequestSent: (sentRequest, receivedRequest) async {
           // Create own new request
           setState(() {
@@ -290,6 +295,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => StatefulBuilder(
         builder: (context, setModalState) => FriendRequestsSheet(
+          fontSize: fontSize,
           sentRequests: sentFriendRequests,
           receivedRequests: receivedFriendRequests,
           onCancelSent: (receiverUid) async {
@@ -390,7 +396,24 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
       appBar: AppBar(
         backgroundColor: lightBlueColor,
         title: const Text("Home", style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600, color: strongBlueColor)),
-        actions: [IconButton(icon: const Icon(Icons.logout, color: strongBlueColor), onPressed: _handleLogOut)],
+        actions: [
+          IconButton(icon: const Icon(
+            Icons.settings,
+            color: strongBlueColor),
+            onPressed: () {
+              showPreferencesSheet(
+                context: context,
+                currentFontSize: fontSize,
+                onFontSizeChanged: (newFontSize) {
+                  setState(() {
+                    fontSize = newFontSize;
+                  });
+                },
+              );
+            }
+          ),
+          IconButton(icon: const Icon(Icons.logout, color: strongBlueColor), onPressed: _handleLogOut),
+        ],
       ),
       body: email.isEmpty
         ? _loading()
@@ -404,7 +427,8 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
             friends != null
                 ? friends!.isNotEmpty
                   ? FriendsList(
-                      friends: friends!,
+              fontSize: fontSize,
+              friends: friends!,
               onUnfriend: (UserModel friend) async {
                 try {
                   final sentRequest = await userFirestoreService.unfriend(friend.uid);
@@ -447,7 +471,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
               },
             )
                   : Center(
-                      child: Text("You have no friend yet", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: strongBlueColor))
+                      child: Text("You have no friend yet", style: TextStyle(fontSize: 18 + fontSize, fontWeight: FontWeight.w500, color: strongBlueColor))
                     )
                 : _loading(),
           ],
@@ -458,14 +482,14 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   Widget _profileSection() => Column(children: [
     ProfileAvatar(imagePath: profileImageUrl, radius: 50,),
     const SizedBox(height: 12),
-    Text(username, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: strongBlueColor)),
-    Text(email, style: const TextStyle(fontSize: 16)),
-    Text(description, style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic)),
+    Text(username, style: TextStyle(fontSize: 24 + fontSize , fontWeight: FontWeight.bold, color: strongBlueColor)),
+    Text(email, style: TextStyle(fontSize: 16 + fontSize)),
+    Text(description, style: TextStyle(fontSize: 14 + fontSize, fontStyle: FontStyle.italic)),
     const SizedBox(height: 12),
     ElevatedButton.icon(
       onPressed: _editProfileSheet,
       icon: const Icon(Icons.edit),
-      label: const Text("Edit Profile"),
+      label: Text("Edit Profile", style: TextStyle(fontSize: 14 + fontSize),),
       style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
     ),
   ]);
@@ -473,7 +497,7 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   Widget _friendsSection() => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      const Text("Friends", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: strongBlueColor)),
+      Text("Friends", style: TextStyle(fontSize: 20 + fontSize, fontWeight: FontWeight.bold, color: strongBlueColor)),
       Row(children: [
         Stack(children: [
           IconButton(icon: const Icon(Icons.email, color: strongBlueColor), onPressed: _showFriendRequests),

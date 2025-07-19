@@ -8,6 +8,7 @@ class ChatBubble extends StatelessWidget {
   final bool isGroup;
   final bool isRead;
   final int readByCount;
+  final double fontSize;
 
   const ChatBubble({
     super.key,
@@ -17,6 +18,7 @@ class ChatBubble extends StatelessWidget {
     required this.isGroup,
     required this.isRead,
     required this.readByCount,
+    required this.fontSize,
   });
 
   @override
@@ -53,7 +55,7 @@ class ChatBubble extends StatelessWidget {
             ),
             child: Text(
               text,
-              style: TextStyle(color: textColor),
+              style: TextStyle(color: textColor, fontSize: 14 + fontSize),
             ),
           ),
           const SizedBox(height: 4),
@@ -62,7 +64,7 @@ class ChatBubble extends StatelessWidget {
             children: [
               Text(
                 formatTime(time),
-                style: const TextStyle(fontSize: 10, color: Colors.grey),
+                style: TextStyle(fontSize: 10 + fontSize, color: Colors.grey),
               ),
               if (isMe) ...[
                 const SizedBox(width: 6),
@@ -75,7 +77,7 @@ class ChatBubble extends StatelessWidget {
                 if (isGroup && readByCount > 0)
                   Text(
                     "$readByCount read",
-                    style: const TextStyle(fontSize: 10, color: Colors.blueGrey),
+                    style: TextStyle(fontSize: 10 + fontSize, color: Colors.blueGrey),
                   ),
               ],
             ],

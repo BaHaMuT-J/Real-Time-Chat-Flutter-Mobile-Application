@@ -24,6 +24,16 @@ class UserPrefs {
     return prefs.getBool('isOnBoard') ?? false;
   }
 
+  static Future<void> saveFontSize(double size) async {
+    final prefs = await UserPrefs._getPrefs();
+    await prefs.setDouble('fontSize', size);
+  }
+
+  static Future<double> getFontSize() async {
+    final prefs = await UserPrefs._getPrefs();
+    return prefs.getDouble('fontSize') ?? 0;
+  }
+
   static Future<void> saveCredential(String email, String password) async {
     final prefs = await UserPrefs._getPrefs();
     await prefs.setString('email', email);

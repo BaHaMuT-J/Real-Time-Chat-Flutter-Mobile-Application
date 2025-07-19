@@ -24,6 +24,7 @@ class ChatListPage extends StatefulWidget {
 class _ChatListPageState extends State<ChatListPage> {
   List<ChatModel>? allChats;
   final Map<String, UserModel?> friendCache = {};
+  double fontSize = 0;
 
   @override
   void initState() {
@@ -113,12 +114,16 @@ class _ChatListPageState extends State<ChatListPage> {
     UserPrefs.handleReceivedRequestFromSocket(data);
   }
 
-  void startApp() {
+  void startApp() async {
     debugPrint('Start app from chat list page');
     Future.wait([
       _loadChats(),
     ]).then((_) {
       UserPrefs.saveIsLoadChat(true);
+    });
+    double prefFontSize = await UserPrefs.getFontSize();
+    setState(() {
+      fontSize = prefFontSize;
     });
   }
 
@@ -166,7 +171,7 @@ class _ChatListPageState extends State<ChatListPage> {
   void pushToChatPage(ChatModel chat, String name) {
     socketService.off("message", _listenToMessage);
     Navigator.push(context, MaterialPageRoute(
-      builder: (_) => ChatPage(chat: chat, chatName: name),
+      builder: (_) => ChatPage(chat: chat, chatName: name, fontSize: fontSize,),
     )).then((value) {
       _loadChats();
       socketService.on("message", _listenToMessage);
@@ -181,10 +186,22 @@ class _ChatListPageState extends State<ChatListPage> {
         backgroundColor: lightBlueColor,
         title: const Text("Chat", style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600, color: strongBlueColor)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: strongBlueColor),
-            onPressed: _handleLogOut,
+          IconButton(icon: const Icon(
+              Icons.settings,
+              color: strongBlueColor),
+              onPressed: () {
+                showPreferencesSheet(
+                  context: context,
+                  currentFontSize: fontSize,
+                  onFontSizeChanged: (newFontSize) {
+                    setState(() {
+                      fontSize = newFontSize;
+                    });
+                  },
+                );
+              }
           ),
+          IconButton(icon: const Icon(Icons.logout, color: strongBlueColor), onPressed: _handleLogOut,),
         ],
       ),
       body: allChats == null
@@ -271,12 +288,13 @@ class _ChatListPageState extends State<ChatListPage> {
       leading: ProfileAvatar(imagePath: imageUrl),
       title: Text(
         name,
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
+        style: TextStyle(fontSize: 24 + fontSize, fontWeight: FontWeight.w400),
       ),
       subtitle: Text(
         lastMessage ?? "",
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 14 + fontSize),
       ),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -284,7 +302,7 @@ class _ChatListPageState extends State<ChatListPage> {
         children: [
           Text(
             lastMessageTimeStamp != null ? formatTime(lastMessageTimeStamp) : "",
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            style: TextStyle(color: Colors.grey, fontSize: 12 + fontSize),
           ),
           if (unreadCount > 0)
             Container(
@@ -296,9 +314,9 @@ class _ChatListPageState extends State<ChatListPage> {
               ),
               child: Text(
                 '$unreadCount',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: 12 + fontSize,
                   fontWeight: FontWeight.bold,
                 ),
               ),

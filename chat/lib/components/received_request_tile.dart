@@ -7,12 +7,14 @@ class ReceivedFriendRequestTile extends StatefulWidget {
   final ReceivedFriendRequestModel request;
   final Future<void> Function() onApprove;
   final Future<void> Function() onReject;
+  final double fontSize;
 
   const ReceivedFriendRequestTile({
     super.key,
     required this.request,
     required this.onApprove,
     required this.onReject,
+    required this.fontSize,
   });
 
   @override
@@ -37,11 +39,11 @@ class _ReceivedFriendRequestTileState extends State<ReceivedFriendRequestTile> {
         ),
         title: Text(
           widget.request.username,
-          style: const TextStyle(color: strongBlueColor),
+          style: TextStyle(color: strongBlueColor, fontSize: 14 + widget.fontSize),
         ),
         subtitle: Text(
           widget.request.description,
-          style: const TextStyle(color: strongBlueColor),
+          style: TextStyle(color: strongBlueColor, fontSize: 14 + widget.fontSize),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

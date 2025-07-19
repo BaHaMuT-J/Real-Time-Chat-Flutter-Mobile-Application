@@ -11,11 +11,13 @@ import 'package:flutter/material.dart';
 class ChatPage extends StatefulWidget {
   final ChatModel chat;
   final String? chatName;
+  final double fontSize;
 
   const ChatPage({
     super.key,
     required this.chat,
     this.chatName,
+    required this.fontSize,
   });
 
   @override
@@ -329,8 +331,8 @@ class _ChatPageState extends State<ChatPage> {
                                       padding: const EdgeInsets.only(top: 2),
                                       child: Text(
                                         userName,
-                                        style: const TextStyle(
-                                          fontSize: 10,
+                                        style: TextStyle(
+                                          fontSize: 10 + widget.fontSize,
                                           color: Colors.grey,
                                         ),
                                       ),
@@ -346,6 +348,7 @@ class _ChatPageState extends State<ChatPage> {
                               isGroup: widget.chat.isGroup,
                               isRead: isOtherRead,
                               readByCount: readByCount,
+                              fontSize: widget.fontSize,
                             ),
                           ),
                         ],

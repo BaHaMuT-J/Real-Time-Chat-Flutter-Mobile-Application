@@ -8,8 +8,9 @@ import 'package:chat/services/user_firestore.dart';
 
 class AddFriendSheet extends StatefulWidget {
   final Future<void> Function(SentFriendRequestModel sentRequest, ReceivedFriendRequestModel receivedRequest) onRequestSent;
+  final double fontSize;
 
-  const AddFriendSheet({super.key, required this.onRequestSent});
+  const AddFriendSheet({super.key, required this.onRequestSent, required this.fontSize});
 
   @override
   State<AddFriendSheet> createState() => _AddFriendSheetState();
@@ -48,7 +49,7 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: strongBlueColor),
                   onPressed: _performSearch,
-                  child: const Text("Search", style: TextStyle(color: Colors.white)),
+                  child: Text("Search", style: TextStyle(color: Colors.white, fontSize: 14 + widget.fontSize)),
                 ),
                 const SizedBox(height: 16),
                 if (isLoading)
@@ -65,8 +66,8 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                             leading: ProfileAvatar(
                               imagePath: user.profileImageUrl,
                             ),
-                            title: Text(user.username, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: strongBlueColor)),
-                            subtitle: Text(user.description, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: weakBlueColor)),
+                            title: Text(user.username, style: TextStyle(fontSize: 18 + widget.fontSize, fontWeight: FontWeight.bold, color: strongBlueColor)),
+                            subtitle: Text(user.description, style: TextStyle(fontSize: 16 + widget.fontSize, fontWeight: FontWeight.w600, color: weakBlueColor)),
                             trailing: isSent
                               ? Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -99,7 +100,7 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
                           );
                         }).toList(),
                         )
-                        : const Text("No users found.", style: TextStyle(color: strongBlueColor, fontSize: 16, fontWeight: FontWeight.w600));
+                        : Text("No users found.", style: TextStyle(color: strongBlueColor, fontSize: 16 + widget.fontSize, fontWeight: FontWeight.w600));
                     },
                   ),
               ],
