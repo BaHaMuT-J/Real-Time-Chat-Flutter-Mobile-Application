@@ -160,7 +160,9 @@ class UserFirestoreService {
     requests.sort((a, b) => a.user.username.compareTo(b.user.username));
 
     UserPrefs.saveSentFriendRequests(requests);
-    return Pair(requests, sentFriendRequestsListRef.length != requests.length);
+    final hasNewRequest = sentFriendRequestsListRef.length != requests.length;
+    UserPrefs.saveHasNewRequest(true);
+    return Pair(requests, hasNewRequest);
   }
 
   Future<Pair<List<ReceivedFriendRequestModel>, bool>> getAllReceivedFriendRequest({ bool isPreferPref = true}) async {
@@ -197,7 +199,9 @@ class UserFirestoreService {
     requests.sort((a, b) => a.username.compareTo(b.username));
 
     UserPrefs.saveReceivedFriendRequests(requests);
-    return Pair(requests, receivedFriendRequestsListRef.length != requests.length);
+    final hasNewRequest = receivedFriendRequestsListRef.length != requests.length;
+    UserPrefs.saveHasNewRequest(true);
+    return Pair(requests, hasNewRequest);
   }
 
   Future<Pair<SentFriendRequestModel, ReceivedFriendRequestModel>> sendFriendRequest(String receiverUid) async {
@@ -470,9 +474,34 @@ class UserFirestoreService {
         .delete();
   }
 
-  Future<Pair<String, String>> unfriend(String friendUID) async {
+  Future<SentFriendRequestModel?> unfriend(String friendUID) async {
     final currentUid = _auth.currentUser!.uid;
 
+    // Step 1: Attempt to fetch the SentFriendRequestModel from friendUID
+    SentFriendRequestModel? friendSentRequest;
+
+    final friendSentRequestDoc = await _firestore
+        .collection('users')
+        .doc(friendUID)
+        .collection('sent_friend_requests')
+        .doc(currentUid)
+        .get();
+
+    if (friendSentRequestDoc.exists) {
+      final data = friendSentRequestDoc.data()!;
+      final userRef = data['user'] as DocumentReference;
+      final userSnap = await userRef.get();
+      final userData = userSnap.data() as Map<String, dynamic>;
+      userData['uid'] = userSnap.id;
+
+      final userModel = UserModel.fromJson(userData);
+      friendSentRequest = SentFriendRequestModel(
+        user: userModel,
+        status: data['status'],
+      );
+    }
+
+    // Step 2: Remove each other from friends
     await _firestore
         .collection('users')
         .doc(friendUID)
@@ -487,7 +516,7 @@ class UserFirestoreService {
         .doc(friendUID)
         .delete();
 
-    // Clean up any leftover sent friend requests
+    // Step 3: Clean up any leftover sent friend requests
     await _firestore
         .collection('users')
         .doc(currentUid)
@@ -504,11 +533,12 @@ class UserFirestoreService {
         .delete()
         .catchError((e) => debugPrint('No sent request from $friendUID to delete'));
 
-    // Delete chat between these users
+    // Step 4: Delete chat between these users
     await UserPrefs.saveIsLoadChat(false);
-    _chatFirestoreService.deleteChat(friendUID);
+    await _chatFirestoreService.deleteChat(friendUID);
 
-    return Pair(currentUid, friendUID);
+    // Step 5: Return the friend's SentFriendRequestModel if it was found
+    return friendSentRequest;
   }
 
 }

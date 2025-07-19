@@ -99,18 +99,18 @@ class _ChatListPageState extends State<ChatListPage> {
 
   void _listenToFriend(data) async {
     debugPrint('Chat list socket friend in $currentUid: $data');
-    UserPrefs.saveIsLoadFriend(false);
+    UserPrefs.handleFriendFromSocket(data);
     _loadChats(isPreferPref: false);
   }
 
   void _listenToSentRequest(data) async {
     debugPrint('Chat list socket sent request in $currentUid: $data');
-    UserPrefs.saveIsLoadSentRequest(false);
+    UserPrefs.handleSentRequestFromSocket(data);
   }
 
   void _listenToReceivedRequest(data) async {
     debugPrint('Chat list socket received request in $currentUid: $data');
-    UserPrefs.saveIsLoadReceivedRequest(false);
+    UserPrefs.handleReceivedRequestFromSocket(data);
   }
 
   void startApp() {
