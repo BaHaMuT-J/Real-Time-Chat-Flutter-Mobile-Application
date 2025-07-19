@@ -46,6 +46,7 @@ dependencies:
   firebase_messaging: ^15.2.9
   http: ^1.4.0
   flutter_local_notifications: ^19.3.0
+  smooth_page_indicator: ^1.2.1
 
 dev_dependencies:
   flutter_test:

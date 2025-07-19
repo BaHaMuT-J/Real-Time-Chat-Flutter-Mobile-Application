@@ -1,6 +1,7 @@
 import 'package:chat/constant.dart';
 import 'package:chat/pages/login_page.dart';
 import 'package:chat/pages/main_page.dart';
+import 'package:chat/pages/onboard.dart';
 import 'package:chat/services/firebase_message.dart';
 import 'package:chat/services/local_notification.dart';
 import 'package:chat/userPref.dart';
@@ -25,7 +26,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
-      home: const InitialPage(),
+      home: FutureBuilder<bool>(
+          future: UserPrefs.getIsOnBoard(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final isOnBoard = snapshot.data!;
+            return isOnBoard ? const InitialPage() : const OnBoardPage();
+    }
+      ),
     );
   }
 }

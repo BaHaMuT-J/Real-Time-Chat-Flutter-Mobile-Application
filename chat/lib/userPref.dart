@@ -14,6 +14,16 @@ class UserPrefs {
     return _prefs ??= await SharedPreferences.getInstance();
   }
 
+  static Future<void> saveIsOnBoard(bool isOnBoard) async {
+    final prefs = await UserPrefs._getPrefs();
+    await prefs.setBool('isOnBoard', isOnBoard);
+  }
+
+  static Future<bool> getIsOnBoard() async {
+    final prefs = await UserPrefs._getPrefs();
+    return prefs.getBool('isOnBoard') ?? false;
+  }
+
   static Future<void> saveCredential(String email, String password) async {
     final prefs = await UserPrefs._getPrefs();
     await prefs.setString('email', email);
