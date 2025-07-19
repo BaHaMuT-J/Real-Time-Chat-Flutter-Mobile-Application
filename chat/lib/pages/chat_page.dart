@@ -6,6 +6,7 @@ import 'package:chat/constant.dart';
 import 'package:chat/model/chat_model.dart';
 import 'package:chat/model/message_model.dart';
 import 'package:chat/services/local_notification.dart';
+import 'package:chat/userPref.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -233,6 +234,9 @@ class _ChatPageState extends State<ChatPage> {
       }
     });
 
+    final currentUsername = await UserPrefs.getUsername();
+    final notificationTitle = widget.chat.isGroup ? '${widget.chat.chatName} - $currentUsername' : '$currentUsername - $currentUsername';
+    final notificationBody = text;
     for (String uid in widget.chat.users) {
       if (uid == currentUid) continue;
       socketService.emit("message", {
@@ -241,6 +245,8 @@ class _ChatPageState extends State<ChatPage> {
         'chat': jsonEncode(widget.chat.toJson()),
         'chatName': widget.chatName,
         'message': jsonEncode(message.toJson()),
+        'title': notificationTitle,
+        'body': notificationBody,
       });
     }
   }

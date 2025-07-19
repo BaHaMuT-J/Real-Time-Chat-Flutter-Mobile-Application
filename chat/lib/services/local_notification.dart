@@ -63,19 +63,8 @@ class LocalNotificationService {
   }
 
   static Future<void> showNotificationFromSocket(data) async {
-    final newMessage = MessageModel.fromJson(jsonDecode(data['message']));
-    final messageChatId = data['chatId'];
-    final ChatModel? chat = await _chatFirestoreService.getChatById(messageChatId);
-    if (chat == null) return;
-
-    String? friendName = userNameCache[newMessage.senderId];
-    if (friendName == null) {
-      final friend = await _userFirestoreService.getUser(newMessage.senderId);
-      friendName = friend?.username;
-    }
-
-    final notificationTitle = chat.isGroup ? chat.chatName : friendName;
-    final notificationBody = friendName != null ? '$friendName send a new message From Chat list' : 'New message';
+    final notificationTitle = data['title'];
+    final notificationBody = data['body'];
     LocalNotificationService.showCustomNotification(
       title: notificationTitle!,
       body: notificationBody,

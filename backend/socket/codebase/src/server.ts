@@ -103,7 +103,7 @@ const start = async () => {
 
       const tokenFCM = await getTokenFCM(data.userId);
       if (tokenFCM) {
-        sendNotificationMessage(tokenFCM, `socket title`, `socket body`, data);
+        sendNotificationMessage(tokenFCM, data["title"], data["body"], data);
       } else {
         console.log(`No FCM token found for user ${data.userId}`);
       }

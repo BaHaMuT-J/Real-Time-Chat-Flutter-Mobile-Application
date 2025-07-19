@@ -119,7 +119,7 @@ class _AddFriendSheetState extends State<AddFriendSheet> {
 
   Future<void> _performSearch() async {
     final query = searchController.text.trim().toLowerCase();
-    // if (query.isEmpty) return; // Only search with query (not allow search all user)
+    if (query.isEmpty) return; // Only search with query (not allow search all user)
     setState(() => isLoading = true);
     final results = await UserFirestoreService().searchUsers(query);
     searchResults.value = results;
