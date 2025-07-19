@@ -29,6 +29,36 @@ const allThemeColors = [
     colorShade3: Color(0xFFA1E3F9),
     colorShade4: Color(0xFFD1F8EF),
   ),
+  ThemeColors(
+    colorShade1: Color(0xFF3E5F44),
+    colorShade2: Color(0xFF5E936C),
+    colorShade3: Color(0xFF93DA97),
+    colorShade4: Color(0xFFE8FFD7),
+  ),
+  ThemeColors(
+    colorShade1: Color(0xFFB53791),
+    colorShade2: Color(0xFFC062AF),
+    colorShade3: Color(0xFFDB8DD0),
+    colorShade4: Color(0xFFFEC5F6),
+  ),
+  ThemeColors(
+    colorShade1: Color(0xFF7B4019),
+    colorShade2: Color(0xFFFF7D29),
+    colorShade3: Color(0xFFFFBF78),
+    colorShade4: Color(0xFFFFEEA9),
+  ),
+  ThemeColors(
+    colorShade1: Color(0xFF2D336B),
+    colorShade2: Color(0xFF7886C7),
+    colorShade3: Color(0xFFA9B5DF),
+    colorShade4: Color(0xFFFFF2F2),
+  ),
+  ThemeColors(
+    colorShade1: Color(0xFF222831),
+    colorShade2: Color(0xFF393E46),
+    colorShade3: Color(0xFF948979),
+    colorShade4: Color(0xFFDFD0B8),
+  ),
 ];
 
 class ThemeColorProvider extends ChangeNotifier {
@@ -52,10 +82,6 @@ class ThemeColorProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
-
-// final theme = context.watch<ThemeProvider>().theme;
-//
-// context.read<ThemeProvider>().setThemeByIndex(1);
 
 class Pair<A, B> {
   final A first;
