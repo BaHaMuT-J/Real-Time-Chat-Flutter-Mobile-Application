@@ -20,9 +20,6 @@ class FirebaseMessagingService {
   static StreamSubscription<RemoteMessage>? _onMessageOpenedAppSub;
   static StreamSubscription<String>? _onTokenRefreshSub;
 
-  // static final isTesting = true; // dummy for testing, check if backend server is running
-  static final isTesting = false;
-
   static Future<void> initialize() async {
     debugPrint('FirebaseMessaging init');
 
@@ -73,8 +70,7 @@ class FirebaseMessagingService {
 
   static void _sendTokenToServer(String token) async {
     debugPrint("Sending token to server: $token");
-    if (isTesting) return;
-    final backendUrl = dotenv.env['BACKEND_URL']!;
+    final backendUrl = dotenv.env['BACKEND_URL'] ?? 'http://10.0.2.2:3000';
     final url = '$backendUrl/api/fcm/set';
     debugPrint('Send token to url: $url');
     try {
@@ -141,8 +137,7 @@ class FirebaseMessagingService {
     // Also delete token to stop receiving pushes
     if (uid != null) {
       debugPrint("Unregister token to server with uid: $uid");
-      if (isTesting) return;
-      final backendUrl = dotenv.env['BACKEND_URL']!;
+      final backendUrl = dotenv.env['BACKEND_URL'] ?? 'http://10.0.2.2:3000';
       final url = '$backendUrl/api/fcm/unset';
       debugPrint('Unregister token to url: $url');
       try {

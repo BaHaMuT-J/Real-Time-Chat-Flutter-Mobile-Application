@@ -17,7 +17,7 @@ class SocketService {
   late IO.Socket socket;
 
   void _init() {
-    final String server = dotenv.env['SOCKET_URL']!;
+    final String server = dotenv.env['SOCKET_URL'] ?? 'http://10.0.2.2:3000';
     socket = IO.io(
       server,
       IO.OptionBuilder()
