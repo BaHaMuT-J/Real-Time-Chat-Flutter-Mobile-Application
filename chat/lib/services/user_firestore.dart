@@ -161,7 +161,7 @@ class UserFirestoreService {
 
     UserPrefs.saveSentFriendRequests(requests);
     final hasNewRequest = sentFriendRequestsListRef.length != requests.length;
-    UserPrefs.saveHasNewRequest(true);
+    UserPrefs.saveHasNewRequest(sentFriendRequestsListRef.length != requests.length);
     return Pair(requests, hasNewRequest);
   }
 
@@ -200,7 +200,7 @@ class UserFirestoreService {
 
     UserPrefs.saveReceivedFriendRequests(requests);
     final hasNewRequest = receivedFriendRequestsListRef.length != requests.length;
-    UserPrefs.saveHasNewRequest(true);
+    UserPrefs.saveHasNewRequest(receivedFriendRequestsListRef.length != requests.length);
     return Pair(requests, hasNewRequest);
   }
 

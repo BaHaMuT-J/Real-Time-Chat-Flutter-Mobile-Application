@@ -290,6 +290,10 @@ class _HomeInfoPageState extends State<HomeInfoPage> {
   }
 
   void _showFriendRequests(ThemeColors color) {
+    UserPrefs.saveHasNewRequest(false);
+    setState(() {
+      hasNewRequests = false;
+    });
     showModalBottomSheet(
       context: context,
       backgroundColor: color.colorShade4,
